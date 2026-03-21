@@ -53,6 +53,7 @@ function useCloudSyncState(docName, localKey, defaultVal) {
     const saved = localStorage.getItem(localKey);
     return saved ? JSON.parse(saved) : defaultVal;
   });
+  const [isLoaded, setIsLoaded] = useState(!!localStorage.getItem(localKey));
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "app_data", docName), (docSnap) => {
@@ -65,11 +66,13 @@ function useCloudSyncState(docName, localKey, defaultVal) {
           }
           return prev;
         });
+        setIsLoaded(true);
       } else {
         // If the document doesn't exist in the cloud at all, seed it with our local data
         const saved = localStorage.getItem(localKey);
         const seedData = saved ? JSON.parse(saved) : defaultVal;
         setDoc(doc(db, "app_data", docName), { items: seedData }).catch(e => console.warn("Seed error:", e));
+        setIsLoaded(true);
       }
     });
     return unsub;
@@ -84,7 +87,7 @@ function useCloudSyncState(docName, localKey, defaultVal) {
     });
   }, [docName, localKey]);
 
-  return [state, updateState];
+  return [state, updateState, isLoaded];
 }
 
 // Component purely for the inline typing experience
