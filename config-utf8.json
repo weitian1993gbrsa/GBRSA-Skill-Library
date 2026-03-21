@@ -1,0 +1,17 @@
+﻿{
+  "status": "success",
+  "result": {
+    "fileName": "firebase-js-config.json",
+    "fileContents": "{\n  \"projectId\": \"gbrsa-skill-library\",\n  \"appId\": \"1:606519257730:web:c50722643fd766f2b0629b\",\n  \"storageBucket\": \"gbrsa-skill-library.firebasestorage.app\",\n  \"apiKey\": \"AIzaSyARaQuzXB-wlaQ7h1BR0ItgB1pURF3GBgU\",\n  \"authDomain\": \"gbrsa-skill-library.firebaseapp.com\",\n  \"messagingSenderId\": \"606519257730\",\n  \"projectNumber\": \"606519257730\",\n  \"version\": \"2\"\n}",
+    "sdkConfig": {
+      "projectId": "gbrsa-skill-library",
+      "appId": "1:606519257730:web:c50722643fd766f2b0629b",
+      "storageBucket": "gbrsa-skill-library.firebasestorage.app",
+      "apiKey": "AIzaSyARaQuzXB-wlaQ7h1BR0ItgB1pURF3GBgU",
+      "authDomain": "gbrsa-skill-library.firebaseapp.com",
+      "messagingSenderId": "606519257730",
+      "projectNumber": "606519257730",
+      "version": "2"
+    }
+  }
+}

@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   MoreVertical,
 } from "lucide-react";
+import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
 
 const LEVELS = ["0.5", "1", "2", "3", "4", "5", "6", "7", "8"];
 
@@ -45,6 +47,40 @@ const DEFAULT_SKILLS = [
 ];
 
 const DEFAULT_ROUTINES = [];
+
+function useCloudSyncState(docName, localKey, defaultVal) {
+  const [state, setState] = useState(() => {
+    const saved = localStorage.getItem(localKey);
+    return saved ? JSON.parse(saved) : defaultVal;
+  });
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, "app_data", docName), (docSnap) => {
+      if (docSnap.exists()) {
+        const remoteData = docSnap.data().items || defaultVal;
+        setState((prev) => {
+          if (JSON.stringify(prev) !== JSON.stringify(remoteData)) {
+            localStorage.setItem(localKey, JSON.stringify(remoteData));
+            return remoteData;
+          }
+          return prev;
+        });
+      }
+    });
+    return unsub;
+  }, [docName, localKey]);
+
+  const updateState = React.useCallback((newValOrUpdater) => {
+    setState((prev) => {
+      const newVal = typeof newValOrUpdater === "function" ? newValOrUpdater(prev) : newValOrUpdater;
+      localStorage.setItem(localKey, JSON.stringify(newVal));
+      setDoc(doc(db, "app_data", docName), { items: newVal }).catch(e => console.warn("Firestore error (enable database in console):", e));
+      return newVal;
+    });
+  }, [docName, localKey]);
+
+  return [state, updateState];
+}
 
 // Component purely for the inline typing experience
 const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
@@ -277,40 +313,11 @@ function App() {
   }, []);
 
   // Skills
-  const [skills, setSkills] = useState(() => {
-    const saved = localStorage.getItem("ijru_skills");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return DEFAULT_SKILLS;
-      }
-    }
-    return DEFAULT_SKILLS;
-  });
+  const [skills, setSkills] = useCloudSyncState("skills", "ijru_skills", DEFAULT_SKILLS);
 
   // Routines
-  const [routines, setRoutines] = useState(() => {
-    const saved = localStorage.getItem("ijru_routines");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return DEFAULT_ROUTINES;
-      }
-    }
-    return DEFAULT_ROUTINES;
-  });
+  const [routines, setRoutines] = useCloudSyncState("routines", "ijru_routines", DEFAULT_ROUTINES);
   const [activeRoutineId, setActiveRoutineId] = useState(null);
-
-  useEffect(
-    () => localStorage.setItem("ijru_skills", JSON.stringify(skills)),
-    [skills],
-  );
-  useEffect(
-    () => localStorage.setItem("ijru_routines", JSON.stringify(routines)),
-    [routines],
-  );
 
   // Skill Form State
   const [filterLevel, setFilterLevel] = useState("All");
