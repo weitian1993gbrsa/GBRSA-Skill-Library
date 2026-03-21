@@ -65,6 +65,11 @@ function useCloudSyncState(docName, localKey, defaultVal) {
           }
           return prev;
         });
+      } else {
+        // If the document doesn't exist in the cloud at all, seed it with our local data
+        const saved = localStorage.getItem(localKey);
+        const seedData = saved ? JSON.parse(saved) : defaultVal;
+        setDoc(doc(db, "app_data", docName), { items: seedData }).catch(e => console.warn("Seed error:", e));
       }
     });
     return unsub;
