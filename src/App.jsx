@@ -437,6 +437,7 @@ function App() {
     return () => window.removeEventListener('keydown', handleUndoKey);
   }, [activeTab, undo]);
 
+
   // Skill Form State
   const [filterLevel, setFilterLevel] = useState("All");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -611,6 +612,7 @@ function App() {
 
   // Routine Handlers
   const createNewRoutine = () => {
+    setRoutinesHistory([]); // Clear any old history from other routines
     saveToHistory();
     const newId = crypto.randomUUID();
     const newRoutine = {
