@@ -93,6 +93,8 @@ function useCloudSyncState(docName, localKey, defaultVal) {
 // Component purely for the inline typing experience
 const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
   const [inputValue, setInputValue] = useState("");
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [editValue, setEditValue] = useState("");
 
   const searchStr = inputValue.toLowerCase().trim();
   const prediction =
@@ -181,18 +183,34 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
     onChange(rowId, newArr);
   };
 
-  const editAt = (idx) => {
+  const startEditing = (idx) => {
+    setEditingIdx(idx);
+    setEditValue(rawSkills[idx]);
+    setTimeout(() => document.getElementById(`edit-${rowId}-${idx}`)?.focus(), 0);
+  };
+
+  const finishEditing = (idx) => {
+    if (editingIdx === null) return;
     const newArr = [...rawSkills];
-    const tokenToEdit = newArr.splice(idx, 1)[0];
-    onChange(rowId, newArr);
-    
-    if (inputValue.trim()) {
-      setInputValue(inputValue + ", " + tokenToEdit);
+    const trimmed = editValue.trim();
+    if (trimmed) {
+      newArr[idx] = trimmed;
     } else {
-      setInputValue(tokenToEdit);
+      newArr.splice(idx, 1);
     }
-    
-    setTimeout(() => document.getElementById(`input-${rowId}`)?.focus(), 0);
+    onChange(rowId, newArr);
+    setEditingIdx(null);
+    setEditValue("");
+  };
+
+  const handleEditKeyDown = (e, idx) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      finishEditing(idx);
+    } else if (e.key === "Escape") {
+      setEditingIdx(null);
+      setEditValue("");
+    }
   };
 
   return (
@@ -201,6 +219,32 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
       onClick={() => document.getElementById(`input-${rowId}`)?.focus()}
     >
       {rawSkills.map((token, idx) => {
+        if (editingIdx === idx) {
+          return (
+            <input
+              key={idx}
+              id={`edit-${rowId}-${idx}`}
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onKeyDown={(e) => handleEditKeyDown(e, idx)}
+              onBlur={() => finishEditing(idx)}
+              className="inline-edit-input"
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: `${Math.max(editValue.length, 5)}ch`,
+                minWidth: "60px",
+                border: "none",
+                background: "var(--accent-primary)",
+                color: "white",
+                padding: "2px 6px",
+                borderRadius: "4px",
+                outline: "none"
+              }}
+            />
+          );
+        }
+
         let displayName = token;
         let displayLevel = null;
 
@@ -228,7 +272,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
               style={{ cursor: "pointer" }} 
               onClick={(e) => { 
                 e.stopPropagation(); 
-                editAt(idx); 
+                startEditing(idx); 
               }}
               title="Click to edit"
             >
