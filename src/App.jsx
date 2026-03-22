@@ -768,13 +768,17 @@ function App() {
                   onClick={() => {
                     setActiveTab("library");
                     setActiveRoutineId(null);
+                    setRoutinesHistory([]);
                   }}
                 >
                   <BookOpen size={20} /> Skill Library
                 </button>
                 <button
                   className={`tab-btn ${activeTab === "routines" ? "active" : ""}`}
-                  onClick={() => setActiveTab("routines")}
+                  onClick={() => {
+                    setActiveTab("routines");
+                    setRoutinesHistory([]);
+                  }}
                 >
                   <Users size={20} /> Student Routines
                 </button>
@@ -1064,7 +1068,10 @@ function App() {
                     <div className="routine-header-card">
                       <button
                         className="btn-icon"
-                        onClick={() => setActiveRoutineId(null)}
+                        onClick={() => {
+                          setActiveRoutineId(null);
+                          setRoutinesHistory([]);
+                        }}
                         title="Back"
                       >
                         <ArrowLeft size={20} />
