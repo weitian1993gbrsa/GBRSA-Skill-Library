@@ -51,9 +51,9 @@ const DEFAULT_SKILLS = [
 
 const DEFAULT_ROUTINES = [];
 const DEFAULT_MODIFIERS = [
-  { id: "mod-1", name: "Double 1", value: "L1, L1", socialLink: "" },
-  { id: "mod-2", name: "Triple 1", value: "L1, L1, L1", socialLink: "" },
-  { id: "mod-3", name: "Modified 2", value: "L1, L1, L2", socialLink: "" },
+  { id: "mod-1", name: "Double 1", value: "L1, L1", socialLink: "", categories: ["Rope Manipulation"], subcategories: ["Basic/Wrap"] },
+  { id: "mod-2", name: "Triple 1", value: "L1, L1, L1", socialLink: "", categories: ["Rope Manipulation"], subcategories: ["Basic/Wrap"] },
+  { id: "mod-3", name: "Modified 2", value: "L1, L1, L2", socialLink: "", categories: ["Rope Manipulation"], subcategories: ["Basic/Wrap"] },
 ];
 
 function useCloudSyncState(docName, localKey, defaultVal) {
@@ -477,9 +477,12 @@ function App() {
     name: "",
     value: "",
     socialLink: "",
+    categories: [],
+    subcategories: [],
   });
   const [isModifierModalOpen, setIsModifierModalOpen] = useState(false);
   const [modifierSearchTerm, setModifierSearchTerm] = useState("");
+  const [modifierFilterCategory, setModifierFilterCategory] = useState("All");
 
   const [videoUrl, setVideoUrl] = useState(null);
 
@@ -644,6 +647,8 @@ function App() {
       name: "",
       value: "",
       socialLink: "",
+      categories: [],
+      subcategories: [],
     });
     setIsModifierModalOpen(false);
   };
@@ -656,6 +661,24 @@ function App() {
   const handleModifierInputChange = (e) => {
     const { name, value } = e.target;
     setModifierFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleModifierCategory = (cat) => {
+    setModifierFormData((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(cat)
+        ? prev.categories.filter((c) => c !== cat)
+        : [...prev.categories, cat],
+    }));
+  };
+
+  const toggleModifierSubcategory = (sub) => {
+    setModifierFormData((prev) => ({
+      ...prev,
+      subcategories: prev.subcategories.includes(sub)
+        ? prev.subcategories.filter((s) => s !== sub)
+        : [...prev.subcategories, sub],
+    }));
   };
 
   const handleModifierSubmit = (e) => {
@@ -1167,10 +1190,17 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Placeholder dropdown for layout consistency like Skill Library */}
                     <div className="form-group">
-                      <select disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-                        <option>All Categories</option>
+                      <select
+                        value={modifierFilterCategory}
+                        onChange={(e) => setModifierFilterCategory(e.target.value)}
+                      >
+                        <option value="All">All Categories</option>
+                        {Object.keys(CATEGORIES).map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1187,10 +1217,15 @@ function App() {
                 </div>
 
                 {(() => {
-                  const filteredModifiers = modifiers.filter((mod) => 
-                    mod.name.toLowerCase().includes(modifierSearchTerm.toLowerCase()) ||
-                    mod.value.toLowerCase().includes(modifierSearchTerm.toLowerCase())
-                  );
+                  const filteredModifiers = modifiers.filter((mod) => {
+                    const matchesCategory =
+                      modifierFilterCategory === "All" ||
+                      (mod.categories && mod.categories.includes(modifierFilterCategory));
+                    const matchesSearch =
+                      mod.name.toLowerCase().includes(modifierSearchTerm.toLowerCase()) ||
+                      mod.value.toLowerCase().includes(modifierSearchTerm.toLowerCase());
+                    return matchesCategory && matchesSearch;
+                  });
 
                   if (filteredModifiers.length === 0) {
                     return (
@@ -1214,6 +1249,8 @@ function App() {
                       <thead>
                         <tr>
                           <th>MODIFIER SKILL NAME</th>
+                          <th>CATEGORIES</th>
+                          <th>SUB CATEGORIES</th>
                           <th>MODIFIER LEVEL</th>
                           <th>MEDIA LINK</th>
                           <th>Actions</th>
@@ -1223,6 +1260,22 @@ function App() {
                         {filteredModifiers.map((mod) => (
                           <tr key={mod.id}>
                             <td className="cell-name">{mod.name}</td>
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                                {(mod.categories || []).map(cat => (
+                                  <span key={cat} className="badge badge-category">{cat}</span>
+                                ))}
+                                {(!mod.categories || mod.categories.length === 0) && <span className="text-muted">-</span>}
+                              </div>
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
+                                {(mod.subcategories || []).map(sub => (
+                                  <span key={sub} className="badge badge-sub">{sub}</span>
+                                ))}
+                                {(!mod.subcategories || mod.subcategories.length === 0) && <span className="text-muted">-</span>}
+                              </div>
+                            </td>
                             <td>
                               <span className="badge badge-level">
                                 {mod.value}
@@ -1842,6 +1895,74 @@ function App() {
                 placeholder="e.g. Double 1"
                 required
               />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: '1.5rem' }}>
+              <div className="form-group">
+                <label style={{ marginBottom: '0.5rem', display: 'block' }}>Categories (Select all that apply)</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                  {Object.keys(CATEGORIES).map((cat) => {
+                    const isActive = modifierFormData.categories.includes(cat);
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => toggleModifierCategory(cat)}
+                        className={`badge ${isActive ? "active" : ""}`}
+                        style={{
+                          cursor: "pointer",
+                          border: isActive ? "none" : "1px solid var(--border-color)",
+                          background: isActive ? "var(--accent-primary)" : "transparent",
+                          color: isActive ? "white" : "var(--text-secondary)",
+                          padding: '4px 12px',
+                          borderRadius: '12px',
+                          fontSize: '0.75rem',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {cat}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="form-group">
+                <label style={{ marginBottom: '0.5rem', display: 'block' }}>Sub Categories (Select all that apply)</label>
+                <div style={{ 
+                  display: "flex", 
+                  flexWrap: "wrap", 
+                  gap: "6px",
+                  maxHeight: '120px',
+                  overflowY: 'auto',
+                  padding: '4px'
+                }}>
+                  {[...new Set(Object.values(CATEGORIES).flat())]
+                    .filter(Boolean)
+                    .map((sub) => {
+                      const isActive = modifierFormData.subcategories.includes(sub);
+                      return (
+                        <button
+                          key={sub}
+                          type="button"
+                          onClick={() => toggleModifierSubcategory(sub)}
+                          className={`badge ${isActive ? "active" : ""}`}
+                          style={{
+                            cursor: "pointer",
+                            border: isActive ? "none" : "1px solid var(--border-color)",
+                            background: isActive ? "var(--accent-secondary)" : "transparent",
+                            color: isActive ? "white" : "var(--text-secondary)",
+                            padding: '4px 10px',
+                            borderRadius: '12px',
+                            fontSize: '0.7rem',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {sub}
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
