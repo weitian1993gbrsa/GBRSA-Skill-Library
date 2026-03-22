@@ -265,7 +265,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
         let displayLevel = null;
 
         // Check if the user manually appended a level like (L0.5), (l1), or (L0.5, L0.5)
-        const manualMatch = token.match(/\(l\s*([\d.,\sL]+)\)$/i);
+        const manualMatch = token.match(/\(l\s*([\d.,\sL-]+)\)$/i);
         if (manualMatch) {
           displayName = token
             .substring(0, token.length - manualMatch[0].length)
@@ -412,16 +412,16 @@ function App() {
   const [routinesHistory, setRoutinesHistory] = useState([]);
   const [activeRoutineId, setActiveRoutineId] = useState(null);
 
-  const saveToHistory = () => {
+  const saveToHistory = React.useCallback(() => {
     setRoutinesHistory(prev => [JSON.stringify(routines), ...prev].slice(0, 50));
-  };
+  }, [routines]);
 
-  const undo = () => {
+  const undo = React.useCallback(() => {
     if (routinesHistory.length === 0) return;
     const [lastState, ...rest] = routinesHistory;
     setRoutines(JSON.parse(lastState));
     setRoutinesHistory(rest);
-  };
+  }, [routinesHistory, setRoutines]);
 
   useEffect(() => {
     const handleUndoKey = (e) => {
@@ -434,7 +434,7 @@ function App() {
     };
     window.addEventListener('keydown', handleUndoKey);
     return () => window.removeEventListener('keydown', handleUndoKey);
-  }, [routinesHistory, activeTab, undo]);
+  }, [activeTab, undo]);
 
   // Skill Form State
   const [filterLevel, setFilterLevel] = useState("All");
@@ -700,6 +700,7 @@ function App() {
 
   const reorderRows = (dragIdx, dropIdx) => {
     if (dragIdx === dropIdx) return;
+    saveToHistory();
     setRoutines(routines.map(r => {
       if (r.id === activeRoutineId) {
         const newRows = [...r.rows];
@@ -1506,7 +1507,7 @@ function App() {
                             let displayLevel = null;
 
                             const manualMatch = displayName.match(
-                              /\(l\s*([\d.,\sL]+)\)$/i,
+                              /\(l\s*([\d.,\sL-]+)\)$/i,
                             );
                             if (manualMatch) {
                               displayName = displayName
