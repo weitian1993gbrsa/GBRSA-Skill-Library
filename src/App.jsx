@@ -955,14 +955,23 @@ function App() {
                           <button
                             className="btn-icon"
                             onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setContextMenu({
-                                mouseX: e.clientX,
-                                mouseY: e.clientY,
-                                routineId: r.id,
-                              });
-                            }}
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          let x = e.clientX;
+                          let y = e.clientY;
+                          const menuWidth = 200;
+                          const menuHeight = 120;
+                          
+                          if (x + menuWidth > window.innerWidth) x -= menuWidth;
+                          if (y + menuHeight > window.innerHeight) y -= menuHeight;
+
+                          setContextMenu({
+                            mouseX: x,
+                            mouseY: y,
+                            routineId: r.id
+                          });
+                        }}
                             title="Options"
                             style={{ color: "var(--text-secondary)" }}
                           >
