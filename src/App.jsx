@@ -1349,6 +1349,7 @@ function App() {
             onClick={(e) => {
               e.stopPropagation();
               setActiveRoutineId(contextMenu.routineId);
+              setRoutinesHistory([]);
               setContextMenu(null);
             }}
           >
