@@ -314,11 +314,8 @@ function App() {
   const [contextMenu, setContextMenu] = useState(null);
   const [printRoutineId, setPrintRoutineId] = useState(null);
 
-  useEffect(() => {
-    const handleClickOutside = () => setContextMenu(null);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+
+
 
   // Skills
   const [skills, setSkills] = useCloudSyncState("skills", "ijru_skills", DEFAULT_SKILLS);
@@ -343,6 +340,26 @@ function App() {
     socialLink: "",
   });
 
+  const [videoUrl, setVideoUrl] = useState(null);
+
+  const getEmbedUrl = (url) => {
+    if (!url) return null;
+    // YouTube
+    const ytMatch = url.match(
+      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/,
+    );
+    if (ytMatch) {
+      const id = ytMatch[1].split(/[&?]/)[0];
+      return `https://www.youtube.com/embed/${id}?autoplay=1`;
+    }
+    // Instagram (simplified, often needs official API or specific embed URL)
+    if (url.includes("instagram.com")) {
+      return null; // For now, handle as link
+    }
+    return null;
+  };
+
+
   const resetForm = () => {
     setFormData({
       id: "",
@@ -355,6 +372,23 @@ function App() {
     });
     setIsModalOpen(false);
   };
+
+  useEffect(() => {
+    const handleClickOutside = () => setContextMenu(null);
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setVideoUrl(null);
+        resetForm();
+        setContextMenu(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const openNewSkillForm = () => {
     resetForm();
@@ -703,18 +737,18 @@ function App() {
                         </td>
                         <td>
                           {skill.socialLink ? (
-                            <a
-                              href={skill.socialLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="table-link"
+                            <button
+                              onClick={() => setVideoUrl(skill.socialLink)}
+                              className="table-link-btn"
+                              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", color: "var(--accent-primary)", padding: 0 }}
                             >
                               <PlaySquare size={16} /> View
-                            </a>
+                            </button>
                           ) : (
                             <span className="text-muted">-</span>
                           )}
                         </td>
+
                         <td>
                           <div className="actions-cell">
                             <button
@@ -1133,7 +1167,55 @@ function App() {
         </div>
       );
     })()}
+
+    {/* Video Pop-out Modal */}
+    {videoUrl && (
+      <div className="modal-overlay active" onClick={() => setVideoUrl(null)}>
+        <div 
+          className="modal-content video-modal-content" 
+          onClick={(e) => e.stopPropagation()}
+          style={{ maxWidth: '800px', width: '95%', padding: '2rem' }}
+        >
+          <button className="modal-close" onClick={() => setVideoUrl(null)}>
+            <X size={24} />
+          </button>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <PlaySquare size={24} color="var(--accent-primary)" />
+              Skill Demonstration
+            </h2>
+          </div>
+
+          <div className="video-container" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px', background: '#000' }}>
+            {getEmbedUrl(videoUrl) ? (
+              <iframe
+                src={getEmbedUrl(videoUrl)}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title="Video player"
+              ></iframe>
+            ) : (
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center', padding: '20px' }}>
+                <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>This link cannot be embedded directly.</p>
+                <a 
+                  href={videoUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="btn btn-primary"
+                  style={{ textDecoration: 'none' }}
+                >
+                  View on External Site
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </>
+
   );
 }
 

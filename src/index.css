@@ -447,14 +447,24 @@ tr:hover {
 }
 
 /* Print View */
-.print-only { display: none; }
+.print-only {
+  display: none;
+}
 
 @media print {
   body {
     background: white !important;
     color: black !important;
   }
-  .app-container, .tabs-container, .controls-bar, .context-menu, .btn, .btn-icon, .skill-token-delete, .modal-overlay, .routine-picker-grid {
+  .app-container,
+  .tabs-container,
+  .controls-bar,
+  .context-menu,
+  .btn,
+  .btn-icon,
+  .skill-token-delete,
+  .modal-overlay,
+  .routine-picker-grid {
     display: none !important;
   }
   .print-only {
@@ -470,7 +480,8 @@ tr:hover {
   .excel-row-table {
     border: 1px solid #ccc !important;
   }
-  .excel-row-table th, .excel-row-table td {
+  .excel-row-table th,
+  .excel-row-table td {
     border: 1px solid #ccc !important;
     color: black !important;
     background: white !important;
@@ -751,4 +762,33 @@ tr:hover {
 .modal-close:hover {
   background: rgba(0, 0, 0, 0.05);
   color: var(--text-highlight);
+}
+
+.video-modal-content {
+  background: #111827 !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.video-modal-content h2 {
+  color: white !important;
+}
+
+.video-modal-content .modal-close {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.video-modal-content .modal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.table-link-btn {
+  transition: var(--transition);
+  opacity: 0.8;
+}
+
+.table-link-btn:hover {
+  opacity: 1;
+  transform: scale(1.05);
 }
