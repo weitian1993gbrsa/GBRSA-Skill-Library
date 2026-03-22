@@ -17,6 +17,7 @@ import {
   MoreVertical,
   ChevronUp,
   ChevronDown,
+  RotateCcw,
 } from "lucide-react";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
@@ -80,7 +81,7 @@ function useCloudSyncState(docName, localKey, defaultVal) {
       }
     });
     return unsub;
-  }, [docName, localKey]);
+  }, [docName, localKey, defaultVal]);
 
   const updateState = React.useCallback(
     (newValOrUpdater) => {
@@ -1059,25 +1060,13 @@ function App() {
                 return (
                   <div className="animate-fade-in">
                     <div className="routine-header-card">
-                      <div style={{ display: 'flex', gap: '0.8rem' }}>
-                        <button
-                          className="btn-icon"
-                          onClick={() => setActiveRoutineId(null)}
-                          title="Back"
-                        >
-                          <ArrowLeft size={20} />
-                        </button>
-                        {routinesHistory.length > 0 && (
-                          <button
-                            className="btn-icon"
-                            onClick={undo}
-                            style={{ color: 'var(--accent-primary)' }}
-                            title="Undo (Ctrl+Z)"
-                          >
-                            <Activity size={20} style={{ transform: 'rotate(-90deg)' }} />
-                          </button>
-                        )}
-                      </div>
+                      <button
+                        className="btn-icon"
+                        onClick={() => setActiveRoutineId(null)}
+                        title="Back"
+                      >
+                        <ArrowLeft size={20} />
+                      </button>
                       <div
                         className="routine-title-wrapper"
                         style={{ flexWrap: "wrap", alignItems: "flex-start" }}
@@ -1132,7 +1121,24 @@ function App() {
                       </div>
                     </div>
 
-                    <h2 style={{ fontSize: "1.25rem" }}>SKILL LIST</h2>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1.5rem', marginBottom: '0.5rem' }}>
+                      <h2 style={{ fontSize: "1.25rem", margin: 0 }}>SKILL LIST</h2>
+                      {routinesHistory.length > 0 && (
+                        <button
+                          className="btn-icon"
+                          onClick={undo}
+                          style={{ 
+                            color: 'var(--accent-primary)',
+                            padding: '4px',
+                            background: 'rgba(52, 152, 219, 0.1)',
+                            borderRadius: '6px'
+                          }}
+                          title="Undo (Ctrl+Z)"
+                        >
+                          <RotateCcw size={18} />
+                        </button>
+                      )}
+                    </div>
 
                     <table className="excel-row-table">
                       <thead>
