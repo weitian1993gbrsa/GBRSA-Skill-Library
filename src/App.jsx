@@ -1299,11 +1299,36 @@ function App() {
                   display: "flex",
                   gap: "10px",
                   justifyContent: "space-between",
+                  flexWrap: "wrap"
                 }}
               >
-                <button className="btn" onClick={() => setPrintRoutineId(null)}>
-                  ← Back to App
-                </button>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button className="btn" onClick={() => setPrintRoutineId(null)}>
+                    ← Back
+                  </button>
+                  <button 
+                    className="btn" 
+                    style={{ gap: "8px" }}
+                    onClick={() => {
+                      setActiveRoutineId(printRoutineId);
+                      setPrintRoutineId(null);
+                    }}
+                  >
+                    <Edit2 size={18} /> Edit
+                  </button>
+                  <button 
+                    className="btn btn-danger" 
+                    style={{ gap: "8px" }}
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to delete this routine?")) {
+                        deleteRoutine(printRoutineId);
+                        setPrintRoutineId(null);
+                      }
+                    }}
+                  >
+                    <Trash2 size={18} /> Delete
+                  </button>
+                </div>
                 <button
                   className="btn btn-primary"
                   onClick={() => window.print()}
