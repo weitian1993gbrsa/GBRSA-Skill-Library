@@ -109,29 +109,28 @@ function useCloudSyncState(docName, localKey, defaultVal) {
 }
 
 // Component purely for the inline typing experience
-const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
+const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [] }) => {
   const [inputValue, setInputValue] = useState("");
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState("");
 
   const searchStr = inputValue.toLowerCase().trim();
+  const allChoices = [
+    ...library.map(s => ({ ...s, displayName: s.name, type: 'skill' })),
+    ...modifiers.map(m => ({ ...m, displayName: m.name, type: 'modifier' }))
+  ];
+
   const prediction =
     searchStr.length > 0
-      ? library.find(
-          (s) =>
-            s.name.toLowerCase().startsWith(searchStr) &&
-            s.name.toLowerCase() !== searchStr,
+      ? allChoices.find(
+          (c) =>
+            c.displayName.toLowerCase().startsWith(searchStr) &&
+            c.displayName.toLowerCase() !== searchStr,
         )
       : null;
 
-  // Extend prediction to modifiers if no skill matches or if we want both
-  const modifiersLibrary = window.__modifiers || []; // Pass modifiers via window or prop
-  // Actually, I'll pass library and modifiers as props to SkillRowInput or use them from outer scope if I can.
-  // Wait, I should update the component signature.
-
-
   const predictionRemainder = prediction
-    ? prediction.name.substring(inputValue.length)
+    ? prediction.displayName.substring(inputValue.length)
     : "";
 
   const parseTokens = (str) => {
@@ -165,7 +164,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
     if (e.key === "Tab" || e.key === "ArrowRight") {
       if (prediction) {
         e.preventDefault();
-        setInputValue(prediction.name);
+        setInputValue(prediction.displayName);
         return;
       }
     }
@@ -180,7 +179,10 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
       e.preventDefault();
       if (inputValue.trim()) {
         if (prediction && e.key === "Enter") {
-          addToken(prediction.name);
+          const finalVal = prediction.type === 'modifier' 
+            ? `${prediction.name} (l ${prediction.value})`
+            : prediction.name;
+          addToken(finalVal);
         } else {
           addToken(inputValue);
         }
@@ -1116,6 +1118,68 @@ function App() {
               </div>
             )}
 
+            {/* =======================
+            TAB 3: MODIFIERS LIBRARY
+            ======================= */}
+            {activeTab === "modifiers" && (
+              <div className="animate-fade-in">
+                {modifiers.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <Activity size={48} />
+                    </div>
+                    <h3>No modifiers found</h3>
+                    <p>
+                      Click "Add New Modifier" above to define complex level
+                      strings for your routines.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="table-container animate-fade-in">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Modifier Name</th>
+                          <th>Modified Value (Level Format)</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {modifiers.map((mod) => (
+                          <tr key={mod.id}>
+                            <td className="cell-name">{mod.name}</td>
+                            <td>
+                              <span className="badge badge-level">
+                                ({mod.value})
+                              </span>
+                            </td>
+                            <td>
+                              <div className="actions-cell">
+                                <button
+                                  className="btn-icon"
+                                  onClick={() => handleModifierEdit(mod)}
+                                  title="Edit"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon btn-danger"
+                                  onClick={() => handleModifierDelete(mod.id)}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* EXCEL-LIKE BUILDER VIEW */}
             {activeTab === "routines" &&
               activeRoutineId &&
@@ -1261,6 +1325,7 @@ function App() {
                               rawSkills={rawSkills}
                               onChange={updateRowSkills}
                               library={skills}
+                              modifiers={modifiers}
                             />
                           </td>
 
@@ -1371,6 +1436,18 @@ function App() {
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
+                    style={{ 
+                      minHeight: "44px", 
+                      height: "auto",
+                      resize: "none",
+                      overflow: "hidden" 
+                    }}
+                    rows={1}
+                    onInput={(e) => {
+                      e.target.style.height = "auto";
+                      e.target.style.height = e.target.scrollHeight + "px";
+                    }}
+                    placeholder="Briefly describe the skill (will expand as you type)..."
                   />
                 </div>
 
