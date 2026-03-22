@@ -1449,8 +1449,8 @@ function App() {
                   <strong style={{ width: "80px", color: "#666" }}>
                     NAME:
                   </strong>
-                  <h1 style={{ fontSize: "24px", margin: 0, color: "black" }}>
-                    {r.name}
+                  <h1 style={{ fontSize: "24px", margin: 0, color: "black", WebkitTextFillColor: "black" }}>
+                    {r.name || "Unnamed Routine"}
                   </h1>
                 </div>
                 {r.info && (
