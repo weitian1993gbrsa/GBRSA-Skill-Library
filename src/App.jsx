@@ -404,13 +404,37 @@ function App() {
     DEFAULT_SKILLS,
   );
 
-  // Routines
   const [routines, setRoutines] = useCloudSyncState(
     "routines",
     "ijru_routines",
     DEFAULT_ROUTINES,
   );
+  const [routinesHistory, setRoutinesHistory] = useState([]);
   const [activeRoutineId, setActiveRoutineId] = useState(null);
+
+  const saveToHistory = () => {
+    setRoutinesHistory(prev => [JSON.stringify(routines), ...prev].slice(0, 50));
+  };
+
+  const undo = () => {
+    if (routinesHistory.length === 0) return;
+    const [lastState, ...rest] = routinesHistory;
+    setRoutines(JSON.parse(lastState));
+    setRoutinesHistory(rest);
+  };
+
+  useEffect(() => {
+    const handleUndoKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        if (activeTab === 'routines') {
+          e.preventDefault();
+          undo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleUndoKey);
+    return () => window.removeEventListener('keydown', handleUndoKey);
+  }, [routinesHistory, activeTab, undo]);
 
   // Skill Form State
   const [filterLevel, setFilterLevel] = useState("All");
@@ -586,6 +610,7 @@ function App() {
 
   // Routine Handlers
   const createNewRoutine = () => {
+    saveToHistory();
     const newId = crypto.randomUUID();
     const newRoutine = {
       id: newId,
@@ -598,18 +623,21 @@ function App() {
   };
 
   const updateRoutineName = (val) => {
+    saveToHistory();
     setRoutines(
       routines.map((r) => (r.id === activeRoutineId ? { ...r, name: val } : r)),
     );
   };
 
   const updateRoutineInfo = (val) => {
+    saveToHistory();
     setRoutines(
       routines.map((r) => (r.id === activeRoutineId ? { ...r, info: val } : r)),
     );
   };
 
   const addRow = () => {
+    saveToHistory();
     setRoutines(
       routines.map((r) => {
         if (r.id === activeRoutineId)
@@ -623,6 +651,7 @@ function App() {
   };
 
   const deleteRow = (rowId) => {
+    saveToHistory();
     setRoutines(
       routines.map((r) => {
         if (r.id === activeRoutineId)
@@ -633,6 +662,9 @@ function App() {
   };
 
   const updateRowSkills = (rowId, newRawSkills) => {
+    // Only save history if we're not inside the typing logic (which updates on every key if we're not careful)
+    // Actually SkillRowInput handles the final onChange, so this is the right place.
+    saveToHistory();
     setRoutines(
       routines.map((r) => {
         if (r.id === activeRoutineId) {
@@ -651,6 +683,7 @@ function App() {
 
   const deleteRoutine = (id) => {
     if (window.confirm("Delete this student routine?")) {
+      saveToHistory();
       setRoutines(routines.filter((r) => r.id !== id));
       if (activeRoutineId === id) setActiveRoutineId(null);
     }
@@ -658,6 +691,7 @@ function App() {
 
   const reorderRoutines = (dragIdx, dropIdx) => {
     if (dragIdx === dropIdx) return;
+    saveToHistory();
     const newRoutines = [...routines];
     const [moved] = newRoutines.splice(dragIdx, 1);
     newRoutines.splice(dropIdx, 0, moved);
@@ -1024,12 +1058,25 @@ function App() {
                 return (
                   <div className="animate-fade-in">
                     <div className="routine-header-card">
-                      <button
-                        className="btn-icon"
-                        onClick={() => setActiveRoutineId(null)}
-                      >
-                        <ArrowLeft size={20} />
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.8rem' }}>
+                        <button
+                          className="btn-icon"
+                          onClick={() => setActiveRoutineId(null)}
+                          title="Back"
+                        >
+                          <ArrowLeft size={20} />
+                        </button>
+                        {routinesHistory.length > 0 && (
+                          <button
+                            className="btn-icon"
+                            onClick={undo}
+                            style={{ color: 'var(--accent-primary)' }}
+                            title="Undo (Ctrl+Z)"
+                          >
+                            <Activity size={20} style={{ transform: 'rotate(-90deg)' }} />
+                          </button>
+                        )}
+                      </div>
                       <div
                         className="routine-title-wrapper"
                         style={{ flexWrap: "wrap", alignItems: "flex-start" }}
