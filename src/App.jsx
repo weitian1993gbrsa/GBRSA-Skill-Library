@@ -50,6 +50,11 @@ const DEFAULT_SKILLS = [
 ];
 
 const DEFAULT_ROUTINES = [];
+const DEFAULT_MODIFIERS = [
+  { id: "mod-1", name: "Double 1", value: "L1, L1" },
+  { id: "mod-2", name: "Triple 1", value: "L1, L1, L1" },
+  { id: "mod-3", name: "Modified 2", value: "L1, L1, L2" },
+];
 
 function useCloudSyncState(docName, localKey, defaultVal) {
   const [state, setState] = useState(() => {
@@ -118,6 +123,12 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
             s.name.toLowerCase() !== searchStr,
         )
       : null;
+
+  // Extend prediction to modifiers if no skill matches or if we want both
+  const modifiersLibrary = window.__modifiers || []; // Pass modifiers via window or prop
+  // Actually, I'll pass library and modifiers as props to SkillRowInput or use them from outer scope if I can.
+  // Wait, I should update the component signature.
+
 
   const predictionRemainder = prediction
     ? prediction.name.substring(inputValue.length)
@@ -410,6 +421,11 @@ function App() {
     "ijru_routines",
     DEFAULT_ROUTINES,
   );
+  const [modifiers, setModifiers] = useCloudSyncState(
+    "modifiers",
+    "ijru_modifiers",
+    DEFAULT_MODIFIERS,
+  );
   const [routinesHistory, setRoutinesHistory] = useState([]);
   const [activeRoutineId, setActiveRoutineId] = useState(null);
 
@@ -453,6 +469,13 @@ function App() {
     description: "",
     socialLink: "",
   });
+
+  const [modifierFormData, setModifierFormData] = useState({
+    id: "",
+    name: "",
+    value: "",
+  });
+  const [isModifierModalOpen, setIsModifierModalOpen] = useState(false);
 
   const [videoUrl, setVideoUrl] = useState(null);
 
@@ -608,6 +631,56 @@ function App() {
   const handleEdit = (skill) => {
     setFormData(skill);
     setIsModalOpen(true);
+  };
+
+  // Modifier Handlers
+  const resetModifierForm = () => {
+    setModifierFormData({
+      id: "",
+      name: "",
+      value: "",
+    });
+    setIsModifierModalOpen(false);
+  };
+
+  const openNewModifierForm = () => {
+    resetModifierForm();
+    setIsModifierModalOpen(true);
+  };
+
+  const handleModifierInputChange = (e) => {
+    const { name, value } = e.target;
+    setModifierFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleModifierSubmit = (e) => {
+    e.preventDefault();
+    const modName = modifierFormData.name.trim();
+    if (!modName) return;
+
+    if (modifierFormData.id) {
+      setModifiers(
+        modifiers.map((m) =>
+          m.id === modifierFormData.id ? { ...modifierFormData, name: modName } : m,
+        ),
+      );
+    } else {
+      setModifiers([
+        { ...modifierFormData, name: modName, id: crypto.randomUUID() },
+        ...modifiers,
+      ]);
+    }
+    resetModifierForm();
+  };
+
+  const handleModifierDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this modifier?"))
+      setModifiers(modifiers.filter((m) => m.id !== id));
+  };
+
+  const handleModifierEdit = (mod) => {
+    setModifierFormData(mod);
+    setIsModifierModalOpen(true);
   };
 
   // Routine Handlers
@@ -782,6 +855,15 @@ function App() {
                 >
                   <Users size={20} /> Student Routines
                 </button>
+                <button
+                  className={`tab-btn ${activeTab === "modifiers" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("modifiers");
+                    setRoutinesHistory([]);
+                  }}
+                >
+                  <Activity size={20} /> Modifiers Library
+                </button>
               </div>
               {activeTab === "routines" && (
                 <button
@@ -790,6 +872,15 @@ function App() {
                   onClick={createNewRoutine}
                 >
                   <Plus size={16} /> Create New Routine
+                </button>
+              )}
+              {activeTab === "modifiers" && (
+                <button
+                  className="btn btn-primary"
+                  style={{ padding: "0.4rem 1rem", fontSize: "0.9rem" }}
+                  onClick={openNewModifierForm}
+                >
+                  <Plus size={16} /> Add New Modifier
                 </button>
               )}
             </div>
@@ -1555,6 +1646,55 @@ function App() {
             </div>
           );
         })()}
+
+
+      {/* Modal for Add / Edit Modifier */}
+      <div className={`modal-overlay ${isModifierModalOpen ? "active" : ""}`}>
+        <div className="modal-content">
+          <button className="modal-close" onClick={resetModifierForm}>
+            <X size={24} />
+          </button>
+          <h2>
+            {modifierFormData.id ? <Edit2 size={24} /> : <Plus size={24} />}{" "}
+            {modifierFormData.id ? "Edit Modifier" : "Add New Modifier"}
+          </h2>
+
+          <form onSubmit={handleModifierSubmit}>
+            <div className="form-group">
+              <label>Modifier Name (e.g. Triple 1)</label>
+              <input
+                type="text"
+                name="name"
+                value={modifierFormData.name}
+                onChange={handleModifierInputChange}
+                placeholder="e.g. Double 1"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Value (e.g. L1, L1, L1)</label>
+              <input
+                type="text"
+                name="value"
+                value={modifierFormData.value}
+                onChange={handleModifierInputChange}
+                placeholder="e.g. L1, L1, L2"
+                required
+              />
+              <p className="text-muted" style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
+                Format: L1, L1, L2 etc. (This will appear as (L1, L1, L2))
+              </p>
+            </div>
+
+            <div className="modal-actions" style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}>
+              <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 2rem' }}>
+                {modifierFormData.id ? "Update Modifier" : "Save Modifier"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
 
       {/* Video Pop-out Modal */}
       {videoUrl && (
