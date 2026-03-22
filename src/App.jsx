@@ -1017,36 +1017,7 @@ function App() {
                           <BookOpen size={18} color="var(--accent-primary)" />
                           <span className="routine-card-title">{r.name}</span>
                         </div>
-                        <div className="routine-card-right">
-                          <button
-                            className="btn-icon"
-                            onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          
-                          let x = e.clientX;
-                          let y = e.clientY;
-                          const menuWidth = 220;
-                          const menuHeight = 150;
-                          const pad = 10;
-                          
-                          if (x + menuWidth + pad > window.innerWidth) x = window.innerWidth - menuWidth - pad;
-                          if (y + menuHeight + pad > window.innerHeight) y = window.innerHeight - menuHeight - pad;
-                          if (x < pad) x = pad;
-                          if (y < pad) y = pad;
 
-                          setContextMenu({
-                            mouseX: x,
-                            mouseY: y,
-                            routineId: r.id
-                          });
-                        }}
-                            title="Options"
-                            style={{ color: "var(--text-secondary)" }}
-                          >
-                            <MoreVertical size={18} />
-                          </button>
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -1156,9 +1127,7 @@ function App() {
                             ROW
                           </th>
                           <th>SKILLS (Type & hit comma)</th>
-                          <th style={{ width: "50px", textAlign: "center" }}>
-                        ORDER
-                      </th>
+
                       <th style={{ width: "60px", textAlign: "center" }}>
                         DELETE
                       </th>
@@ -1203,9 +1172,7 @@ function App() {
                               library={skills}
                             />
                           </td>
-                          <td className="cell-actions" style={{ textAlign: 'center', opacity: 0.5 }}>
-                             <MoreVertical size={16} />
-                          </td>
+
                           <td className="cell-actions">
                             <button
                               className="btn-icon btn-danger"
