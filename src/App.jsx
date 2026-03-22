@@ -949,9 +949,6 @@ function App() {
                           <span className="routine-card-title">{r.name}</span>
                         </div>
                         <div className="routine-card-right">
-                          <span className="badge badge-sub">
-                            {r.rows.length} Rows
-                          </span>
                           <button
                             className="btn-icon"
                             onClick={(e) => {
