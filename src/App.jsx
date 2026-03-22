@@ -228,6 +228,14 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
     }
   };
 
+  const reorderTokens = (dragIdx, dropIdx) => {
+    if (dragIdx === dropIdx) return;
+    const newArr = [...rawSkills];
+    const [moved] = newArr.splice(dragIdx, 1);
+    newArr.splice(dropIdx, 0, moved);
+    onChange(rowId, newArr);
+  };
+
   return (
     <div
       className="cell-input"
@@ -248,13 +256,6 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
               onClick={(e) => e.stopPropagation()}
               style={{
                 width: `${Math.max(editValue.length, 5)}ch`,
-                minWidth: "60px",
-                border: "none",
-                background: "var(--accent-primary)",
-                color: "white",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                outline: "none",
               }}
             />
           );
@@ -281,7 +282,31 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
         }
 
         return (
-          <span key={idx} className="skill-token">
+          <div
+            key={idx}
+            className="skill-token"
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("text/plain", idx);
+              e.dataTransfer.effectAllowed = "move";
+              e.currentTarget.classList.add("dragging-token");
+              e.stopPropagation();
+            }}
+            onDragEnd={(e) => {
+              e.currentTarget.classList.remove("dragging-token");
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const dragIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
+              reorderTokens(dragIdx, idx);
+            }}
+            style={{ cursor: "grab" }}
+          >
             <span
               className="skill-token-name"
               style={{ cursor: "pointer" }}
@@ -289,7 +314,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
                 e.stopPropagation();
                 startEditing(idx);
               }}
-              title="Click to edit"
+              title="Click to edit / Drag to reorder"
             >
               {displayName}
             </span>
@@ -306,10 +331,8 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
             >
               <X size={12} />
             </button>
-            {(idx < rawSkills.length - 1 || inputValue.length > 0) && (
-              <span className="skill-token-comma">, </span>
-            )}
-          </span>
+            <span className="skill-token-comma">, </span>
+          </div>
         );
       })}
 
@@ -324,6 +347,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
         <input
           id={`input-${rowId}`}
           type="text"
+          className="main-input"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -333,12 +357,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
               ? "Type skills here (separated by comma)..."
               : ""
           }
-          style={{
-            background: "transparent",
-            zIndex: 1,
-            position: "relative",
-            width: "100%",
-          }}
+          autoComplete="off"
         />
         {prediction && inputValue.length > 0 && (
           <div

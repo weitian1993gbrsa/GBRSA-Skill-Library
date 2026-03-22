@@ -649,20 +649,32 @@ tr:hover {
   gap: 0.25rem;
   min-height: 44px;
 }
-.cell-input input {
+.cell-input input.main-input {
   border: none;
   background: transparent;
   outline: none;
   box-shadow: none;
   padding: 0;
-  width: 100%;
+  width: auto;
   min-width: 150px;
+  max-width: 100%;
   font-size: 0.95rem;
   font-weight: 500;
   display: inline-block;
   color: var(--text-highlight);
   flex: 1;
   border-radius: 0;
+}
+.cell-input input.inline-edit-input {
+  width: auto;
+  border: none;
+  background: var(--accent-primary) !important;
+  color: white !important;
+  padding: 2px 6px;
+  border-radius: 4px;
+  outline: none;
+  flex: 0 1 auto;
+  min-width: 60px;
 }
 .cell-input input:focus {
   border: none;
@@ -703,6 +715,13 @@ tr:hover {
 }
 .skill-token:hover .skill-token-delete {
   opacity: 1;
+}
+
+.dragging-token {
+  opacity: 0.4;
+  transform: scale(0.95);
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 4px;
 }
 .cell-actions {
   width: 60px;
