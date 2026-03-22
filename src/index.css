@@ -425,7 +425,9 @@ tr:hover {
 /* Context Menu */
 .context-menu {
   position: fixed;
-  background: var(--surface-primary);
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   border-radius: var(--radius-md);
