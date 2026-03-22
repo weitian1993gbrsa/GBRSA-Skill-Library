@@ -287,7 +287,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
             className="skill-token"
             draggable
             onDragStart={(e) => {
-              e.dataTransfer.setData("text/plain", idx);
+              e.dataTransfer.setData("application/x-skill-token", idx);
               e.dataTransfer.effectAllowed = "move";
               e.currentTarget.classList.add("dragging-token");
               e.stopPropagation();
@@ -302,8 +302,11 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
             onDrop={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              const dragIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
-              reorderTokens(dragIdx, idx);
+              const data = e.dataTransfer.getData("application/x-skill-token");
+              if (data) {
+                const dragIdx = parseInt(data, 10);
+                reorderTokens(dragIdx, idx);
+              }
             }}
             style={{ cursor: "grab" }}
           >
@@ -945,7 +948,7 @@ function App() {
                     onClick={() => setPrintRoutineId(r.id)}
                     draggable
                     onDragStart={(e) => {
-                      e.dataTransfer.setData("text/plain", idx);
+                      e.dataTransfer.setData("application/x-routine-card", idx);
                       e.dataTransfer.effectAllowed = "move";
                       e.currentTarget.classList.add('dragging');
                     }}
@@ -958,8 +961,11 @@ function App() {
                     }}
                     onDrop={(e) => {
                       e.preventDefault();
-                      const dragIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
-                      reorderRoutines(dragIdx, idx);
+                      const data = e.dataTransfer.getData("application/x-routine-card");
+                      if (data) {
+                        const dragIdx = parseInt(data, 10);
+                        reorderRoutines(dragIdx, idx);
+                      }
                     }}
                     style={{ cursor: 'grab' }}
                   >
@@ -1103,7 +1109,7 @@ function App() {
                           key={row.id}
                           draggable
                           onDragStart={(e) => {
-                            e.dataTransfer.setData("text/plain", rowIndex);
+                            e.dataTransfer.setData("application/x-routine-row", rowIndex);
                             e.dataTransfer.effectAllowed = "move";
                             e.currentTarget.classList.add('dragging-row');
                           }}
@@ -1116,8 +1122,11 @@ function App() {
                           }}
                           onDrop={(e) => {
                             e.preventDefault();
-                            const dragIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
-                            reorderRows(dragIdx, rowIndex);
+                            const data = e.dataTransfer.getData("application/x-routine-row");
+                            if (data) {
+                              const dragIdx = parseInt(data, 10);
+                              reorderRows(dragIdx, rowIndex);
+                            }
                           }}
                         >
                           <td className="cell-number" style={{ cursor: 'grab' }}>{rowIndex + 1}</td>
