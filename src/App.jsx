@@ -353,12 +353,19 @@ function App() {
     // Only auto-scroll if we are in the same routine and the row count increased (a row was added)
     if (activeRoutineId && activeRoutineId === lastActiveRoutineId.current && rowCount > lastRowCount.current) {
       setTimeout(() => {
-        addRowBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 50);
+        // Scroll the "Add New Row" button into view (at the bottom)
+        addRowBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        
+        // Also focus the first input of the new row for better UX
+        const lastRow = activeRoutine?.rows[rowCount - 1];
+        if (lastRow) {
+          document.getElementById(`input-${lastRow.id}`)?.focus();
+        }
+      }, 150);
     }
     lastRowCount.current = rowCount;
     lastActiveRoutineId.current = activeRoutineId;
-  }, [rowCount, activeRoutineId]);
+  }, [rowCount, activeRoutineId, activeRoutine?.rows]);
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
