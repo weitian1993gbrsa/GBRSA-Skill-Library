@@ -960,11 +960,14 @@ function App() {
                           
                           let x = e.clientX;
                           let y = e.clientY;
-                          const menuWidth = 200;
-                          const menuHeight = 120;
+                          const menuWidth = 220;
+                          const menuHeight = 150;
+                          const pad = 10;
                           
-                          if (x + menuWidth > window.innerWidth) x -= menuWidth;
-                          if (y + menuHeight > window.innerHeight) y -= menuHeight;
+                          if (x + menuWidth + pad > window.innerWidth) x = window.innerWidth - menuWidth - pad;
+                          if (y + menuHeight + pad > window.innerHeight) y = window.innerHeight - menuHeight - pad;
+                          if (x < pad) x = pad;
+                          if (y < pad) y = pad;
 
                           setContextMenu({
                             mouseX: x,
