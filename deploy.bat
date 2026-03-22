@@ -1,5 +1,20 @@
 @echo off
 echo =======================================
+echo    CHECKING DEPENDENCIES...
+echo =======================================
+
+if not exist node_modules (
+    echo [INFO] node_modules not found. Installing dependencies...
+    call npm install
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERROR] npm install failed.
+        pause
+        exit /b %ERRORLEVEL%
+    )
+)
+
+echo.
+echo =======================================
 echo    BUILDING IJRU SKILL LIBRARY...
 echo =======================================
 call npm run build

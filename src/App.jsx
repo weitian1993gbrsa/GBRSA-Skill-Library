@@ -15,6 +15,8 @@ import {
   ChevronRight,
   ArrowLeft,
   MoreVertical,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "./firebase";
@@ -71,21 +73,31 @@ function useCloudSyncState(docName, localKey, defaultVal) {
         // If the document doesn't exist in the cloud at all, seed it with our local data
         const saved = localStorage.getItem(localKey);
         const seedData = saved ? JSON.parse(saved) : defaultVal;
-        setDoc(doc(db, "app_data", docName), { items: seedData }).catch(e => console.warn("Seed error:", e));
+        setDoc(doc(db, "app_data", docName), { items: seedData }).catch((e) =>
+          console.warn("Seed error:", e),
+        );
         setIsLoaded(true);
       }
     });
     return unsub;
   }, [docName, localKey]);
 
-  const updateState = React.useCallback((newValOrUpdater) => {
-    setState((prev) => {
-      const newVal = typeof newValOrUpdater === "function" ? newValOrUpdater(prev) : newValOrUpdater;
-      localStorage.setItem(localKey, JSON.stringify(newVal));
-      setDoc(doc(db, "app_data", docName), { items: newVal }).catch(e => console.warn("Firestore error (enable database in console):", e));
-      return newVal;
-    });
-  }, [docName, localKey]);
+  const updateState = React.useCallback(
+    (newValOrUpdater) => {
+      setState((prev) => {
+        const newVal =
+          typeof newValOrUpdater === "function"
+            ? newValOrUpdater(prev)
+            : newValOrUpdater;
+        localStorage.setItem(localKey, JSON.stringify(newVal));
+        setDoc(doc(db, "app_data", docName), { items: newVal }).catch((e) =>
+          console.warn("Firestore error (enable database in console):", e),
+        );
+        return newVal;
+      });
+    },
+    [docName, localKey],
+  );
 
   return [state, updateState, isLoaded];
 }
@@ -186,7 +198,10 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
   const startEditing = (idx) => {
     setEditingIdx(idx);
     setEditValue(rawSkills[idx]);
-    setTimeout(() => document.getElementById(`edit-${rowId}-${idx}`)?.focus(), 0);
+    setTimeout(
+      () => document.getElementById(`edit-${rowId}-${idx}`)?.focus(),
+      0,
+    );
   };
 
   const finishEditing = (idx) => {
@@ -239,7 +254,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
                 color: "white",
                 padding: "2px 6px",
                 borderRadius: "4px",
-                outline: "none"
+                outline: "none",
               }}
             />
           );
@@ -267,12 +282,12 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
 
         return (
           <span key={idx} className="skill-token">
-            <span 
-              className="skill-token-name" 
-              style={{ cursor: "pointer" }} 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                startEditing(idx); 
+            <span
+              className="skill-token-name"
+              style={{ cursor: "pointer" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                startEditing(idx);
               }}
               title="Click to edit"
             >
@@ -358,14 +373,19 @@ function App() {
   const [contextMenu, setContextMenu] = useState(null);
   const [printRoutineId, setPrintRoutineId] = useState(null);
 
-
-
-
   // Skills
-  const [skills, setSkills] = useCloudSyncState("skills", "ijru_skills", DEFAULT_SKILLS);
+  const [skills, setSkills] = useCloudSyncState(
+    "skills",
+    "ijru_skills",
+    DEFAULT_SKILLS,
+  );
 
   // Routines
-  const [routines, setRoutines] = useCloudSyncState("routines", "ijru_routines", DEFAULT_ROUTINES);
+  const [routines, setRoutines] = useCloudSyncState(
+    "routines",
+    "ijru_routines",
+    DEFAULT_ROUTINES,
+  );
   const [activeRoutineId, setActiveRoutineId] = useState(null);
 
   // Skill Form State
@@ -385,21 +405,28 @@ function App() {
   });
 
   const [videoUrl, setVideoUrl] = useState(null);
-  
+
   // Ref for auto-scrolling
   const addRowBtnRef = useRef(null);
-  const activeRoutine = routines.find(r => r.id === activeRoutineId);
+  const activeRoutine = routines.find((r) => r.id === activeRoutineId);
   const rowCount = activeRoutine?.rows.length || 0;
   const lastRowCount = useRef(rowCount);
   const lastActiveRoutineId = useRef(activeRoutineId);
 
   useEffect(() => {
     // Only auto-scroll if we are in the same routine and the row count increased (a row was added)
-    if (activeRoutineId && activeRoutineId === lastActiveRoutineId.current && rowCount > lastRowCount.current) {
+    if (
+      activeRoutineId &&
+      activeRoutineId === lastActiveRoutineId.current &&
+      rowCount > lastRowCount.current
+    ) {
       setTimeout(() => {
         // Scroll the "Add New Row" button into view (at the bottom)
-        addRowBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        
+        addRowBtnRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+        });
+
         // Also focus the first input of the new row for better UX
         const lastRow = activeRoutine?.rows[rowCount - 1];
         if (lastRow) {
@@ -415,7 +442,8 @@ function App() {
     if (!url) return null;
     try {
       // YouTube
-      const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|^shorts\/|youtube.com\/shorts\/)([^#&?]*).*/;
+      const ytRegExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|^shorts\/|youtube.com\/shorts\/)([^#&?]*).*/;
 
       const match = url.match(ytRegExp);
       if (match && match[2].length === 11) {
@@ -426,8 +454,6 @@ function App() {
     }
     return null;
   };
-
-
 
   const resetForm = () => {
     setFormData({
@@ -606,6 +632,35 @@ function App() {
     }
   };
 
+  const moveRoutine = (id, direction) => {
+    const idx = routines.findIndex(r => r.id === id);
+    if (idx === -1) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= routines.length) return;
+    
+    const newRoutines = [...routines];
+    const [moved] = newRoutines.splice(idx, 1);
+    newRoutines.splice(newIdx, 0, moved);
+    setRoutines(newRoutines);
+  };
+
+  const moveRow = (rowId, direction) => {
+    setRoutines(routines.map(r => {
+      if (r.id === activeRoutineId) {
+        const idx = r.rows.findIndex(row => row.id === rowId);
+        if (idx === -1) return r;
+        const newIdx = idx + direction;
+        if (newIdx < 0 || newIdx >= r.rows.length) return r;
+        
+        const newRows = [...r.rows];
+        const [moved] = newRows.splice(idx, 1);
+        newRows.splice(newIdx, 0, moved);
+        return { ...r, rows: newRows };
+      }
+      return r;
+    }));
+  };
+
   // Preprocessing
   const filteredSkills = skills
     .filter((skill) => {
@@ -630,377 +685,410 @@ function App() {
 
   return (
     <>
-    {!printRoutineId && (
-    <div className="app-container">
-      {activeTab === "library" && (
-        <header>
-          <div className="logo-container">
-            <div className="logo-icon">
-              <Activity size={28} />
-            </div>
-            <h1>Jump Rope Studio</h1>
-          </div>
-          <div
-            className="text-muted"
-            style={{ display: "flex", alignItems: "center", gap: "8px" }}
-          >
-            <Trophy size={18} color="var(--accent-secondary)" />
-            {skills.length} Skills Logged
-          </div>
-        </header>
-      )}
-
-      {/* TABS */}
-      {!activeRoutineId && (
-        <div className="tabs-container">
-          <div className="tabs-left">
-            <button
-              className={`tab-btn ${activeTab === "library" ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab("library");
-                setActiveRoutineId(null);
-              }}
-            >
-              <BookOpen size={20} /> Skill Library
-            </button>
-            <button
-              className={`tab-btn ${activeTab === "routines" ? "active" : ""}`}
-              onClick={() => setActiveTab("routines")}
-            >
-              <Users size={20} /> Student Routines
-            </button>
-          </div>
-          {activeTab === "routines" && (
-            <button
-              className="btn btn-primary"
-              style={{ padding: "0.4rem 1rem", fontSize: "0.9rem" }}
-              onClick={createNewRoutine}
-            >
-              <Plus size={16} /> Create New Routine
-            </button>
-          )}
-        </div>
-      )}
-
-      <main className="main-content">
-        {/* =======================
-            TAB 1: SKILL LIBRARY
-            ======================= */}
-        {activeTab === "library" && (
-          <div className="animate-fade-in">
-            <div className="controls-bar">
-              <div className="filters-group">
-                <div className="form-group" style={{ flex: "1.5" }}>
-                  <div style={{ position: "relative" }}>
-                    <Search
-                      size={18}
-                      style={{
-                        position: "absolute",
-                        left: "12px",
-                        top: "14px",
-                        color: "var(--text-secondary)",
-                      }}
-                    />
-                    <input
-                      type="text"
-                      style={{ paddingLeft: "38px" }}
-                      placeholder="Search skills by name or description..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
+      {!printRoutineId && (
+        <div className="app-container">
+          {activeTab === "library" && (
+            <header>
+              <div className="logo-container">
+                <div className="logo-icon">
+                  <Activity size={28} />
                 </div>
-
-                <div className="form-group">
-                  <select
-                    value={filterLevel}
-                    onChange={(e) => setFilterLevel(e.target.value)}
-                  >
-                    <option value="All">All Levels</option>
-                    {LEVELS.map((lvl) => (
-                      <option key={lvl} value={lvl}>
-                        Level {lvl}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                  >
-                    <option value="All">All Categories</option>
-                    {Object.keys(CATEGORIES).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <h1>Jump Rope Studio</h1>
               </div>
+              <div
+                className="text-muted"
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
+                <Trophy size={18} color="var(--accent-secondary)" />
+                {skills.length} Skills Logged
+              </div>
+            </header>
+          )}
 
-              <div className="controls-actions">
+          {/* TABS */}
+          {!activeRoutineId && (
+            <div className="tabs-container">
+              <div className="tabs-left">
                 <button
-                  className="btn btn-primary"
-                  onClick={openNewSkillForm}
-                  style={{ margin: 0 }}
+                  className={`tab-btn ${activeTab === "library" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("library");
+                    setActiveRoutineId(null);
+                  }}
                 >
-                  <Plus size={20} /> Add New Skill
+                  <BookOpen size={20} /> Skill Library
+                </button>
+                <button
+                  className={`tab-btn ${activeTab === "routines" ? "active" : ""}`}
+                  onClick={() => setActiveTab("routines")}
+                >
+                  <Users size={20} /> Student Routines
                 </button>
               </div>
+              {activeTab === "routines" && (
+                <button
+                  className="btn btn-primary"
+                  style={{ padding: "0.4rem 1rem", fontSize: "0.9rem" }}
+                  onClick={createNewRoutine}
+                >
+                  <Plus size={16} /> Create New Routine
+                </button>
+              )}
             </div>
+          )}
 
-            {filteredSkills.length === 0 ? (
-              <div className="empty-state animate-fade-in">
-                <div className="empty-state-icon">
-                  <FileSpreadsheet size={48} />
+          <main className="main-content">
+            {/* =======================
+            TAB 1: SKILL LIBRARY
+            ======================= */}
+            {activeTab === "library" && (
+              <div className="animate-fade-in">
+                <div className="controls-bar">
+                  <div className="filters-group">
+                    <div className="form-group" style={{ flex: "1.5" }}>
+                      <div style={{ position: "relative" }}>
+                        <Search
+                          size={18}
+                          style={{
+                            position: "absolute",
+                            left: "12px",
+                            top: "14px",
+                            color: "var(--text-secondary)",
+                          }}
+                        />
+                        <input
+                          type="text"
+                          style={{ paddingLeft: "38px" }}
+                          placeholder="Search skills by name or description..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <select
+                        value={filterLevel}
+                        onChange={(e) => setFilterLevel(e.target.value)}
+                      >
+                        <option value="All">All Levels</option>
+                        {LEVELS.map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            Level {lvl}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                      >
+                        <option value="All">All Categories</option>
+                        {Object.keys(CATEGORIES).map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="controls-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={openNewSkillForm}
+                      style={{ margin: 0 }}
+                    >
+                      <Plus size={20} /> Add New Skill
+                    </button>
+                  </div>
                 </div>
-                <h3>No skills found</h3>
-                <p>
-                  Try adjusting your search filters or click "Add New Skill" to
-                  populate your library.
-                </p>
-              </div>
-            ) : (
-              <div className="table-container animate-fade-in">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Level</th>
-                      <th>Skill Name</th>
-                      <th>Category</th>
-                      <th>Subcategory</th>
-                      <th>Description</th>
-                      <th>Media Link</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSkills.map((skill) => (
-                      <tr key={skill.id}>
-                        <td>
-                          <span className="badge badge-level">
-                            Lvl {skill.level}
-                          </span>
-                        </td>
-                        <td className="cell-name">{skill.name}</td>
-                        <td>
-                          <span className="badge badge-category">
-                            {skill.category}
-                          </span>
-                        </td>
-                        <td>
-                          {skill.subcategory ? (
-                            <span className="badge badge-sub">
-                              {skill.subcategory}
-                            </span>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </td>
-                        <td className="cell-desc" title={skill.description}>
-                          {skill.description || (
-                            <span className="text-muted italic">None</span>
-                          )}
-                        </td>
-                        <td>
-                          {skill.socialLink ? (
-                            <button
-                              onClick={() => setVideoUrl(skill.socialLink)}
-                              className="table-link-btn"
-                              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", color: "var(--accent-primary)", padding: 0 }}
-                            >
-                              <PlaySquare size={16} /> View
-                            </button>
-                          ) : (
-                            <span className="text-muted">-</span>
-                          )}
-                        </td>
 
-                        <td>
-                          <div className="actions-cell">
-                            <button
-                              className="btn-icon"
-                              onClick={() => handleEdit(skill)}
-                              title="Edit"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              className="btn-icon btn-danger"
-                              onClick={() => handleDelete(skill.id)}
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                {filteredSkills.length === 0 ? (
+                  <div className="empty-state animate-fade-in">
+                    <div className="empty-state-icon">
+                      <FileSpreadsheet size={48} />
+                    </div>
+                    <h3>No skills found</h3>
+                    <p>
+                      Try adjusting your search filters or click "Add New Skill"
+                      to populate your library.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="table-container animate-fade-in">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Level</th>
+                          <th>Skill Name</th>
+                          <th>Category</th>
+                          <th>Subcategory</th>
+                          <th>Description</th>
+                          <th>Media Link</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSkills.map((skill) => (
+                          <tr key={skill.id}>
+                            <td>
+                              <span className="badge badge-level">
+                                Lvl {skill.level}
+                              </span>
+                            </td>
+                            <td className="cell-name">{skill.name}</td>
+                            <td>
+                              <span className="badge badge-category">
+                                {skill.category}
+                              </span>
+                            </td>
+                            <td>
+                              {skill.subcategory ? (
+                                <span className="badge badge-sub">
+                                  {skill.subcategory}
+                                </span>
+                              ) : (
+                                <span className="text-muted">-</span>
+                              )}
+                            </td>
+                            <td className="cell-desc" title={skill.description}>
+                              {skill.description || (
+                                <span className="text-muted italic">None</span>
+                              )}
+                            </td>
+                            <td>
+                              {skill.socialLink ? (
+                                <button
+                                  onClick={() => setVideoUrl(skill.socialLink)}
+                                  className="table-link-btn"
+                                  style={{
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                    color: "var(--accent-primary)",
+                                    padding: 0,
+                                  }}
+                                >
+                                  <PlaySquare size={16} /> View
+                                </button>
+                              ) : (
+                                <span className="text-muted">-</span>
+                              )}
+                            </td>
+
+                            <td>
+                              <div className="actions-cell">
+                                <button
+                                  className="btn-icon"
+                                  onClick={() => handleEdit(skill)}
+                                  title="Edit"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon btn-danger"
+                                  onClick={() => handleDelete(skill.id)}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* =======================
+            {/* =======================
             TAB 2: STUDENT ROUTINES
             ======================= */}
-        {activeTab === "routines" && !activeRoutineId && (
-          <div className="animate-fade-in">
-            {routines.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <Users size={48} />
-                </div>
-                <h3>No student routines</h3>
-                <p>
-                  Click "Create New Routine" above to start assigning skills.
-                </p>
-              </div>
-            ) : (
-              <div className="routine-picker-grid">
-                {routines.map((r) => (
-                  <div
-                    key={r.id}
-                    className="routine-card-compact"
-                    onClick={() => setPrintRoutineId(r.id)}
-                  >
-                    <div className="routine-card-left">
-                      <BookOpen size={18} color="var(--accent-primary)" />
-                      <span className="routine-card-title">{r.name}</span>
+            {activeTab === "routines" && !activeRoutineId && (
+              <div className="animate-fade-in">
+                {routines.length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">
+                      <Users size={48} />
                     </div>
-                    <div className="routine-card-right">
-                      <span className="badge badge-sub">
-                        {r.rows.length} Rows
-                      </span>
-                      <button
-                        className="btn-icon"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setContextMenu({
-                            mouseX: e.clientX,
-                            mouseY: e.clientY,
-                            routineId: r.id
-                          });
-                        }}
-                        title="Options"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        <MoreVertical size={18} />
-                      </button>
-                    </div>
+                    <h3>No student routines</h3>
+                    <p>
+                      Click "Create New Routine" above to start assigning
+                      skills.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <div className="routine-picker-grid">
+                    {routines.map((r) => (
+                      <div
+                        key={r.id}
+                        className="routine-card-compact"
+                        onClick={() => setPrintRoutineId(r.id)}
+                      >
+                        <div className="routine-card-left">
+                          <BookOpen size={18} color="var(--accent-primary)" />
+                          <span className="routine-card-title">{r.name}</span>
+                        </div>
+                        <div className="routine-card-right">
+                          <span className="badge badge-sub">
+                            {r.rows.length} Rows
+                          </span>
+                          <button
+                            className="btn-icon"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setContextMenu({
+                                mouseX: e.clientX,
+                                mouseY: e.clientY,
+                                routineId: r.id,
+                              });
+                            }}
+                            title="Options"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* EXCEL-LIKE BUILDER VIEW */}
-        {activeTab === "routines" &&
-          activeRoutineId &&
-          (() => {
-            const activeRoutine = routines.find(
-              (r) => r.id === activeRoutineId,
-            );
-            if (!activeRoutine) return null;
+            {/* EXCEL-LIKE BUILDER VIEW */}
+            {activeTab === "routines" &&
+              activeRoutineId &&
+              (() => {
+                const activeRoutine = routines.find(
+                  (r) => r.id === activeRoutineId,
+                );
+                if (!activeRoutine) return null;
 
-            return (
-              <div className="animate-fade-in">
-                <div className="routine-header-card">
-                  <button
-                    className="btn-icon"
-                    onClick={() => setActiveRoutineId(null)}
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                  <div
-                    className="routine-title-wrapper"
-                    style={{ flexWrap: "wrap", alignItems: "flex-start" }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.8rem",
-                        flex: 1,
-                        minWidth: "300px",
-                      }}
-                    >
-                      <span className="routine-title-label">NAME:</span>
-                      <input
-                        type="text"
-                        className="routine-title-input"
-                        style={{ fontSize: "1rem" }}
-                        value={activeRoutine.name}
-                        onChange={(e) => updateRoutineName(e.target.value)}
-                        placeholder="Enter student name(s)..."
-                      />
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: "0.8rem",
-                        flex: 1,
-                        minWidth: "300px",
-                      }}
-                    >
-                      <span
-                        className="routine-title-label"
-                        style={{ marginTop: "0.5rem" }}
+                return (
+                  <div className="animate-fade-in">
+                    <div className="routine-header-card">
+                      <button
+                        className="btn-icon"
+                        onClick={() => setActiveRoutineId(null)}
                       >
-                        INFO:
-                      </span>
-                      <textarea
-                        className="routine-title-input"
-                        style={{
-                          fontSize: "0.9rem",
-                          minHeight: "60px",
-                          resize: "vertical",
-                          lineHeight: "1.4",
-                        }}
-                        value={activeRoutine.info || ""}
-                        onChange={(e) => updateRoutineInfo(e.target.value)}
-                        placeholder="Add team names, context, or notes here..."
-                      />
+                        <ArrowLeft size={20} />
+                      </button>
+                      <div
+                        className="routine-title-wrapper"
+                        style={{ flexWrap: "wrap", alignItems: "flex-start" }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.8rem",
+                            flex: 1,
+                            minWidth: "300px",
+                          }}
+                        >
+                          <span className="routine-title-label">NAME:</span>
+                          <input
+                            type="text"
+                            className="routine-title-input"
+                            style={{ fontSize: "1rem" }}
+                            value={activeRoutine.name}
+                            onChange={(e) => updateRoutineName(e.target.value)}
+                            placeholder="Enter student name(s)..."
+                          />
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "0.8rem",
+                            flex: 1,
+                            minWidth: "300px",
+                          }}
+                        >
+                          <span
+                            className="routine-title-label"
+                            style={{ marginTop: "0.5rem" }}
+                          >
+                            INFO:
+                          </span>
+                          <textarea
+                            className="routine-title-input"
+                            style={{
+                              fontSize: "0.9rem",
+                              minHeight: "60px",
+                              resize: "vertical",
+                              lineHeight: "1.4",
+                            }}
+                            value={activeRoutine.info || ""}
+                            onChange={(e) => updateRoutineInfo(e.target.value)}
+                            placeholder="Add team names, context, or notes here..."
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                <h2 style={{ fontSize: "1.25rem" }}>SKILL LIST</h2>
+                    <h2 style={{ fontSize: "1.25rem" }}>SKILL LIST</h2>
 
-                <table className="excel-row-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: "50px", textAlign: "center" }}>
-                        ROW
+                    <table className="excel-row-table">
+                      <thead>
+                        <tr>
+                          <th style={{ width: "50px", textAlign: "center" }}>
+                            ROW
+                          </th>
+                          <th>SKILLS (Type & hit comma)</th>
+                          <th style={{ width: "80px", textAlign: "center" }}>
+                        MOVE
                       </th>
-                      <th>SKILLS (Type & hit comma)</th>
                       <th style={{ width: "60px", textAlign: "center" }}>
                         DELETE
                       </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeRoutine.rows.map((row, rowIndex) => {
-                      // Backwards compatibility safety catch
-                      const rawSkills = row.rawSkills || row.skillIds || [];
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeRoutine.rows.map((row, rowIndex) => {
+                          // Backwards compatibility safety catch
+                          const rawSkills = row.rawSkills || row.skillIds || [];
 
-                      return (
-                        <tr key={row.id}>
-                          <td className="cell-number">{rowIndex + 1}</td>
-                          <td>
-                            <SkillRowInput
-                              rowId={row.id}
-                              rawSkills={rawSkills}
-                              onChange={updateRowSkills}
-                              library={skills}
-                            />
+                          return (
+                            <tr key={row.id}>
+                              <td className="cell-number">{rowIndex + 1}</td>
+                              <td>
+                                <SkillRowInput
+                                  rowId={row.id}
+                                  rawSkills={rawSkills}
+                                  onChange={updateRowSkills}
+                                  library={skills}
+                                />
+                              </td>
+                              <td className="cell-actions" style={{ borderLeft: 'none', borderRight: '1px solid #e5e7eb' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                               <button 
+                                 className="btn-icon" 
+                                 style={{ padding: '2px' }} 
+                                 disabled={rowIndex === 0}
+                                 onClick={() => moveRow(row.id, -1)}
+                               >
+                                 <ChevronUp size={14} />
+                               </button>
+                               <button 
+                                 className="btn-icon" 
+                                 style={{ padding: '2px' }} 
+                                 disabled={rowIndex === activeRoutine.rows.length - 1}
+                                 onClick={() => moveRow(row.id, 1)}
+                               >
+                                 <ChevronDown size={14} />
+                               </button>
+                            </div>
                           </td>
                           <td className="cell-actions">
                             <button
@@ -1010,136 +1098,137 @@ function App() {
                               <Trash2 size={16} />
                             </button>
                           </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+
+                    <button
+                      ref={addRowBtnRef}
+                      className="btn"
+                      style={{
+                        marginTop: "1rem",
+                        border: "1px dashed var(--glass-border)",
+                      }}
+                      onClick={addRow}
+                    >
+                      <Plus size={18} /> Add New Row
+                    </button>
+                  </div>
+                );
+              })()}
+          </main>
+
+          {/* Modal for Add / Edit Skill Library */}
+          <div className={`modal-overlay ${isModalOpen ? "active" : ""}`}>
+            <div className="modal-content">
+              <button className="modal-close" onClick={resetForm}>
+                <X size={24} />
+              </button>
+              <h2>
+                {formData.id ? <Edit2 size={24} /> : <Plus size={24} />}{" "}
+                {formData.id ? "Edit Skill" : "Add New Skill"}
+              </h2>
+
+              <form onSubmit={handleSubmit}>
+                <div className="form-group">
+                  <label>Skill Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: "1rem" }}>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label>Level</label>
+                    <select
+                      name="level"
+                      value={formData.level}
+                      onChange={handleInputChange}
+                    >
+                      {LEVELS.map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          Level {lvl}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label>Category</label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                    >
+                      {Object.keys(CATEGORIES).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {CATEGORIES[formData.category].length > 0 && (
+                  <div className="form-group animate-fade-in">
+                    <label>Subcategory</label>
+                    <select
+                      name="subcategory"
+                      value={formData.subcategory}
+                      onChange={handleInputChange}
+                    >
+                      {CATEGORIES[formData.category].map((sub) => (
+                        <option key={sub} value={sub}>
+                          {sub}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label>Description (Optional)</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Social Media / Video Link</label>
+                  <input
+                    type="url"
+                    name="socialLink"
+                    value={formData.socialLink || ""}
+                    onChange={handleInputChange}
+                  />
+                </div>
 
                 <button
-                  ref={addRowBtnRef}
-                  className="btn"
-                  style={{
-                    marginTop: "1rem",
-                    border: "1px dashed var(--glass-border)",
-                  }}
-                  onClick={addRow}
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ marginTop: "1rem" }}
                 >
-                  <Plus size={18} /> Add New Row
+                  <Save size={20} />{" "}
+                  {formData.id ? "Update Skill" : "Save Skill"}
                 </button>
-              </div>
-            );
-          })()}
-      </main>
-
-      {/* Modal for Add / Edit Skill Library */}
-      <div className={`modal-overlay ${isModalOpen ? "active" : ""}`}>
-        <div className="modal-content">
-          <button className="modal-close" onClick={resetForm}>
-            <X size={24} />
-          </button>
-          <h2>
-            {formData.id ? <Edit2 size={24} /> : <Plus size={24} />}{" "}
-            {formData.id ? "Edit Skill" : "Add New Skill"}
-          </h2>
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Skill Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-              />
+              </form>
             </div>
+          </div>
 
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label>Level</label>
-                <select
-                  name="level"
-                  value={formData.level}
-                  onChange={handleInputChange}
-                >
-                  {LEVELS.map((lvl) => (
-                    <option key={lvl} value={lvl}>
-                      Level {lvl}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group" style={{ flex: 1 }}>
-                <label>Category</label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                >
-                  {Object.keys(CATEGORIES).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {CATEGORIES[formData.category].length > 0 && (
-              <div className="form-group animate-fade-in">
-                <label>Subcategory</label>
-                <select
-                  name="subcategory"
-                  value={formData.subcategory}
-                  onChange={handleInputChange}
-                >
-                  {CATEGORIES[formData.category].map((sub) => (
-                    <option key={sub} value={sub}>
-                      {sub}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            <div className="form-group">
-              <label>Description (Optional)</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Social Media / Video Link</label>
-              <input
-                type="url"
-                name="socialLink"
-                value={formData.socialLink || ""}
-                onChange={handleInputChange}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ marginTop: "1rem" }}
+          {/* Context Menu */}
+          {contextMenu && (
+            <div
+              className="context-menu"
+              style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
             >
-              <Save size={20} /> {formData.id ? "Update Skill" : "Save Skill"}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Context Menu */}
-      {contextMenu && (
-        <div 
-          className="context-menu" 
-          style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
-        >
-          <div 
+              <div 
             className="context-menu-item"
             onClick={(e) => {
               e.stopPropagation();
@@ -1150,142 +1239,321 @@ function App() {
             <BookOpen size={16} /> Edit Routine
           </div>
           <div 
-            className="context-menu-item danger"
+            className="context-menu-item"
             onClick={(e) => {
               e.stopPropagation();
-              deleteRoutine(contextMenu.routineId);
+              moveRoutine(contextMenu.routineId, -1);
               setContextMenu(null);
             }}
           >
-            <Trash2 size={16} /> Delete Routine
+            <ChevronUp size={16} /> Move Up
+          </div>
+          <div 
+            className="context-menu-item"
+            onClick={(e) => {
+              e.stopPropagation();
+              moveRoutine(contextMenu.routineId, 1);
+              setContextMenu(null);
+            }}
+          >
+            <ChevronDown size={16} /> Move Down
+          </div>
+              <div
+                className="context-menu-item danger"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteRoutine(contextMenu.routineId);
+                  setContextMenu(null);
+                }}
+              >
+                <Trash2 size={16} /> Delete Routine
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* PDF / PRINT VIEW */}
+      {printRoutineId &&
+        (() => {
+          const r = routines.find((rout) => rout.id === printRoutineId);
+          if (!r) return null;
+          return (
+            <div
+              className="pdf-view-container"
+              style={{
+                padding: "40px",
+                maxWidth: "1000px",
+                margin: "0 auto",
+                width: "100%",
+                fontFamily: "sans-serif",
+              }}
+            >
+              <div
+                className="no-print"
+                style={{
+                  marginBottom: "20px",
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "space-between",
+                }}
+              >
+                <button className="btn" onClick={() => setPrintRoutineId(null)}>
+                  ← Back to App
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => window.print()}
+                >
+                  🖨️ Print / Save as PDF
+                </button>
+              </div>
+
+              <div
+                style={{
+                  marginBottom: "20px",
+                  borderBottom: "2px solid #eee",
+                  paddingBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    marginBottom: "10px",
+                    alignItems: "baseline",
+                  }}
+                >
+                  <strong style={{ width: "80px", color: "#666" }}>
+                    NAME:
+                  </strong>
+                  <h1 style={{ fontSize: "24px", margin: 0, color: "black" }}>
+                    {r.name}
+                  </h1>
+                </div>
+                {r.info && (
+                  <div style={{ display: "flex", alignItems: "baseline" }}>
+                    <strong style={{ width: "80px", color: "#666" }}>
+                      INFO:
+                    </strong>
+                    <p style={{ fontSize: "16px", color: "#333", margin: 0 }}>
+                      {r.info}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <table
+                style={{
+                  width: "100%",
+                  borderCollapse: "collapse",
+                  marginTop: "20px",
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th
+                      style={{
+                        border: "1px solid #ccc",
+                        padding: "12px",
+                        width: "60px",
+                        textAlign: "center",
+                        background: "#f8f9fa",
+                      }}
+                    >
+                      ROW
+                    </th>
+                    <th
+                      style={{
+                        border: "1px solid #ccc",
+                        padding: "12px",
+                        textAlign: "left",
+                        background: "#f8f9fa",
+                      }}
+                    >
+                      SKILLS
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.rows.map((row, rowIndex) => {
+                    const rawSkills = row.rawSkills || row.skillIds || [];
+                    return (
+                      <tr key={row.id}>
+                        <td
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "12px",
+                            textAlign: "center",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {rowIndex + 1}
+                        </td>
+                        <td
+                          style={{
+                            border: "1px solid #ccc",
+                            padding: "12px",
+                            lineHeight: "1.6",
+                          }}
+                        >
+                          {rawSkills.map((token, idx) => {
+                            let displayName = token.trim();
+                            let displayLevel = null;
+
+                            const manualMatch = displayName.match(
+                              /\(l\s*([\d.,\sL]+)\)$/i,
+                            );
+                            if (manualMatch) {
+                              displayName = displayName
+                                .substring(
+                                  0,
+                                  displayName.length - manualMatch[0].length,
+                                )
+                                .trim();
+                              displayLevel = `(L${manualMatch[1]})`;
+                            }
+
+                            const found = skills.find(
+                              (s) =>
+                                s.name.toLowerCase() ===
+                                displayName.toLowerCase(),
+                            );
+                            if (found) {
+                              displayLevel = `(L${found.level})`;
+                            }
+
+                            return (
+                              <span
+                                key={idx}
+                                style={{ display: "inline-block" }}
+                              >
+                                <span
+                                  style={{ fontWeight: 500, color: "black" }}
+                                >
+                                  {displayName}
+                                </span>
+                                {displayLevel && (
+                                  <span
+                                    style={{
+                                      color: "#ef4444",
+                                      fontWeight: 700,
+                                      marginLeft: "4px",
+                                    }}
+                                  >
+                                    {displayLevel}
+                                  </span>
+                                )}
+                                {idx < rawSkills.length - 1 && (
+                                  <span
+                                    style={{
+                                      marginRight: "8px",
+                                      color: "black",
+                                    }}
+                                  >
+                                    ,
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })()}
+
+      {/* Video Pop-out Modal */}
+      {videoUrl && (
+        <div className="modal-overlay active" onClick={() => setVideoUrl(null)}>
+          <div
+            className="modal-content video-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: "800px", width: "95%", padding: "2rem" }}
+          >
+            <button className="modal-close" onClick={() => setVideoUrl(null)}>
+              <X size={24} />
+            </button>
+
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h2
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                }}
+              >
+                <PlaySquare size={24} color="var(--accent-primary)" />
+                Skill Demonstration
+              </h2>
+            </div>
+
+            <div
+              className="video-container"
+              style={{
+                position: "relative",
+                paddingBottom: "56.25%",
+                height: 0,
+                overflow: "hidden",
+                borderRadius: "12px",
+                background: "#000",
+              }}
+            >
+              {getEmbedUrl(videoUrl) ? (
+                <iframe
+                  src={getEmbedUrl(videoUrl)}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    border: 0,
+                  }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="Video player"
+                ></iframe>
+              ) : (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    textAlign: "center",
+                    padding: "20px",
+                  }}
+                >
+                  <p style={{ fontSize: "1.1rem", marginBottom: "1rem" }}>
+                    This link cannot be embedded directly.
+                  </p>
+                  <a
+                    href={videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary"
+                    style={{ textDecoration: "none" }}
+                  >
+                    View on External Site
+                  </a>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
-    </div>
-    )}
-    
-    {/* PDF / PRINT VIEW */}
-    {printRoutineId && (() => {
-      const r = routines.find(rout => rout.id === printRoutineId);
-      if (!r) return null;
-      return (
-        <div className="pdf-view-container" style={{ padding: '40px', maxWidth: '1000px', margin: '0 auto', width: '100%', fontFamily: 'sans-serif' }}>
-          
-          <div className="no-print" style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-            <button className="btn" onClick={() => setPrintRoutineId(null)}>← Back to App</button>
-            <button className="btn btn-primary" onClick={() => window.print()}>🖨️ Print / Save as PDF</button>
-          </div>
-
-          <div style={{ marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '20px' }}>
-            <div style={{ display: 'flex', marginBottom: '10px', alignItems: 'baseline' }}>
-               <strong style={{ width: '80px', color: '#666' }}>NAME:</strong>
-               <h1 style={{ fontSize: '24px', margin: 0, color: 'black' }}>{r.name}</h1>
-            </div>
-            {r.info && (
-              <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                 <strong style={{ width: '80px', color: '#666' }}>INFO:</strong>
-                 <p style={{ fontSize: '16px', color: '#333', margin: 0 }}>{r.info}</p>
-              </div>
-            )}
-          </div>
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '20px' }}>
-            <thead>
-              <tr>
-                 <th style={{ border: '1px solid #ccc', padding: '12px', width: '60px', textAlign: 'center', background: '#f8f9fa' }}>ROW</th>
-                 <th style={{ border: '1px solid #ccc', padding: '12px', textAlign: 'left', background: '#f8f9fa' }}>SKILLS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {r.rows.map((row, rowIndex) => {
-                 const rawSkills = row.rawSkills || row.skillIds || [];
-                 return (
-                  <tr key={row.id}>
-                    <td style={{ border: '1px solid #ccc', padding: '12px', textAlign: 'center', fontWeight: 'bold' }}>
-                      {rowIndex + 1}
-                    </td>
-                    <td style={{ border: '1px solid #ccc', padding: '12px', lineHeight: '1.6' }}>
-                      {rawSkills.map((token, idx) => {
-                         let displayName = token.trim();
-                         let displayLevel = null;
-
-                         const manualMatch = displayName.match(/\(l\s*([\d.,\sL]+)\)$/i);
-                         if (manualMatch) {
-                           displayName = displayName.substring(0, displayName.length - manualMatch[0].length).trim();
-                           displayLevel = `(L${manualMatch[1]})`;
-                         }
-
-                         const found = skills.find(s => s.name.toLowerCase() === displayName.toLowerCase());
-                         if (found) {
-                           displayLevel = `(L${found.level})`;
-                         }
-
-                         return (
-                           <span key={idx} style={{ display: 'inline-block' }}>
-                             <span style={{ fontWeight: 500, color: 'black' }}>{displayName}</span>
-                             {displayLevel && <span style={{ color: '#ef4444', fontWeight: 700, marginLeft: '4px' }}>{displayLevel}</span>}
-                             {idx < rawSkills.length - 1 && <span style={{ marginRight: '8px', color: 'black' }}>,</span>}
-                           </span>
-                         );
-                      })}
-                    </td>
-                  </tr>
-                 );
-              })}
-            </tbody>
-          </table>
-        </div>
-      );
-    })()}
-
-    {/* Video Pop-out Modal */}
-    {videoUrl && (
-      <div className="modal-overlay active" onClick={() => setVideoUrl(null)}>
-        <div 
-          className="modal-content video-modal-content" 
-          onClick={(e) => e.stopPropagation()}
-          style={{ maxWidth: '800px', width: '95%', padding: '2rem' }}
-        >
-          <button className="modal-close" onClick={() => setVideoUrl(null)}>
-            <X size={24} />
-          </button>
-          
-          <div style={{ marginBottom: '1.5rem' }}>
-            <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <PlaySquare size={24} color="var(--accent-primary)" />
-              Skill Demonstration
-            </h2>
-          </div>
-
-          <div className="video-container" style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px', background: '#000' }}>
-            {getEmbedUrl(videoUrl) ? (
-              <iframe
-                src={getEmbedUrl(videoUrl)}
-                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title="Video player"
-              ></iframe>
-            ) : (
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center', padding: '20px' }}>
-                <p style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>This link cannot be embedded directly.</p>
-                <a 
-                  href={videoUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="btn btn-primary"
-                  style={{ textDecoration: 'none' }}
-                >
-                  View on External Site
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    )}
     </>
-
   );
 }
 

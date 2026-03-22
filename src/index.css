@@ -275,6 +275,11 @@ select option {
   background: rgba(0, 0, 0, 0.05);
   color: var(--text-highlight);
 }
+.btn-icon:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .btn-danger {
   color: #ef4444;
 }
