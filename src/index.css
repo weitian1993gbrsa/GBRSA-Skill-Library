@@ -797,3 +797,14 @@ tr:hover {
   opacity: 1;
   transform: scale(1.05);
 }
+
+.dragging {
+  opacity: 0.5;
+  border: 2px dashed var(--accent-primary) !important;
+  transform: scale(0.98);
+}
+
+.dragging-row {
+  opacity: 0.5;
+  background: rgba(79, 70, 229, 0.1) !important;
+}

@@ -632,29 +632,21 @@ function App() {
     }
   };
 
-  const moveRoutine = (id, direction) => {
-    const idx = routines.findIndex(r => r.id === id);
-    if (idx === -1) return;
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= routines.length) return;
-    
+  const reorderRoutines = (dragIdx, dropIdx) => {
+    if (dragIdx === dropIdx) return;
     const newRoutines = [...routines];
-    const [moved] = newRoutines.splice(idx, 1);
-    newRoutines.splice(newIdx, 0, moved);
+    const [moved] = newRoutines.splice(dragIdx, 1);
+    newRoutines.splice(dropIdx, 0, moved);
     setRoutines(newRoutines);
   };
 
-  const moveRow = (rowId, direction) => {
+  const reorderRows = (dragIdx, dropIdx) => {
+    if (dragIdx === dropIdx) return;
     setRoutines(routines.map(r => {
       if (r.id === activeRoutineId) {
-        const idx = r.rows.findIndex(row => row.id === rowId);
-        if (idx === -1) return r;
-        const newIdx = idx + direction;
-        if (newIdx < 0 || newIdx >= r.rows.length) return r;
-        
         const newRows = [...r.rows];
-        const [moved] = newRows.splice(idx, 1);
-        newRows.splice(newIdx, 0, moved);
+        const [moved] = newRows.splice(dragIdx, 1);
+        newRows.splice(dropIdx, 0, moved);
         return { ...r, rows: newRows };
       }
       return r;
@@ -927,12 +919,31 @@ function App() {
                   </div>
                 ) : (
                   <div className="routine-picker-grid">
-                    {routines.map((r) => (
-                      <div
-                        key={r.id}
-                        className="routine-card-compact"
-                        onClick={() => setPrintRoutineId(r.id)}
-                      >
+                {routines.map((r, idx) => (
+                  <div
+                    key={r.id}
+                    className="routine-card-compact"
+                    onClick={() => setPrintRoutineId(r.id)}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("text/plain", idx);
+                      e.dataTransfer.effectAllowed = "move";
+                      e.currentTarget.classList.add('dragging');
+                    }}
+                    onDragEnd={(e) => {
+                      e.currentTarget.classList.remove('dragging');
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const dragIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
+                      reorderRoutines(dragIdx, idx);
+                    }}
+                    style={{ cursor: 'grab' }}
+                  >
                         <div className="routine-card-left">
                           <BookOpen size={18} color="var(--accent-primary)" />
                           <span className="routine-card-title">{r.name}</span>
@@ -1046,8 +1057,8 @@ function App() {
                             ROW
                           </th>
                           <th>SKILLS (Type & hit comma)</th>
-                          <th style={{ width: "80px", textAlign: "center" }}>
-                        MOVE
+                          <th style={{ width: "50px", textAlign: "center" }}>
+                        ORDER
                       </th>
                       <th style={{ width: "60px", textAlign: "center" }}>
                         DELETE
@@ -1060,35 +1071,38 @@ function App() {
                           const rawSkills = row.rawSkills || row.skillIds || [];
 
                           return (
-                            <tr key={row.id}>
-                              <td className="cell-number">{rowIndex + 1}</td>
-                              <td>
-                                <SkillRowInput
-                                  rowId={row.id}
-                                  rawSkills={rawSkills}
-                                  onChange={updateRowSkills}
-                                  library={skills}
-                                />
-                              </td>
-                              <td className="cell-actions" style={{ borderLeft: 'none', borderRight: '1px solid #e5e7eb' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
-                               <button 
-                                 className="btn-icon" 
-                                 style={{ padding: '2px' }} 
-                                 disabled={rowIndex === 0}
-                                 onClick={() => moveRow(row.id, -1)}
-                               >
-                                 <ChevronUp size={14} />
-                               </button>
-                               <button 
-                                 className="btn-icon" 
-                                 style={{ padding: '2px' }} 
-                                 disabled={rowIndex === activeRoutine.rows.length - 1}
-                                 onClick={() => moveRow(row.id, 1)}
-                               >
-                                 <ChevronDown size={14} />
-                               </button>
-                            </div>
+                            <tr 
+                          key={row.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/plain", rowIndex);
+                            e.dataTransfer.effectAllowed = "move";
+                            e.currentTarget.classList.add('dragging-row');
+                          }}
+                          onDragEnd={(e) => {
+                            e.currentTarget.classList.remove('dragging-row');
+                          }}
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            const dragIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
+                            reorderRows(dragIdx, rowIndex);
+                          }}
+                        >
+                          <td className="cell-number" style={{ cursor: 'grab' }}>{rowIndex + 1}</td>
+                          <td>
+                            <SkillRowInput
+                              rowId={row.id}
+                              rawSkills={rawSkills}
+                              onChange={updateRowSkills}
+                              library={skills}
+                            />
+                          </td>
+                          <td className="cell-actions" style={{ textAlign: 'center', opacity: 0.5 }}>
+                             <MoreVertical size={16} />
                           </td>
                           <td className="cell-actions">
                             <button
@@ -1098,7 +1112,7 @@ function App() {
                               <Trash2 size={16} />
                             </button>
                           </td>
-                            </tr>
+                        </tr>
                           );
                         })}
                       </tbody>
@@ -1237,26 +1251,6 @@ function App() {
             }}
           >
             <BookOpen size={16} /> Edit Routine
-          </div>
-          <div 
-            className="context-menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              moveRoutine(contextMenu.routineId, -1);
-              setContextMenu(null);
-            }}
-          >
-            <ChevronUp size={16} /> Move Up
-          </div>
-          <div 
-            className="context-menu-item"
-            onClick={(e) => {
-              e.stopPropagation();
-              moveRoutine(contextMenu.routineId, 1);
-              setContextMenu(null);
-            }}
-          >
-            <ChevronDown size={16} /> Move Down
           </div>
               <div
                 className="context-menu-item danger"
