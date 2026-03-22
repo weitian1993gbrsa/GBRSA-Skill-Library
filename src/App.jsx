@@ -617,7 +617,7 @@ function App() {
     const newId = crypto.randomUUID();
     const newRoutine = {
       id: newId,
-      name: "NEW STUDENT NAME",
+      name: "",
       info: "",
       rows: [{ id: crypto.randomUUID(), rawSkills: [] }],
     };
