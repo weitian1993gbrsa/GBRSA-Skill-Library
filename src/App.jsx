@@ -478,6 +478,7 @@ function App() {
     value: "",
   });
   const [isModifierModalOpen, setIsModifierModalOpen] = useState(false);
+  const [modifierSearchTerm, setModifierSearchTerm] = useState("");
 
   const [videoUrl, setVideoUrl] = useState(null);
 
@@ -1123,19 +1124,55 @@ function App() {
             ======================= */}
             {activeTab === "modifiers" && (
               <div className="animate-fade-in">
-                {modifiers.length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-state-icon">
-                      <Activity size={48} />
+                <div className="controls-bar">
+                  <div className="filters-group" style={{ justifyContent: 'flex-start' }}>
+                    <div className="form-group" style={{ flex: "2" }}>
+                      <div style={{ position: "relative" }}>
+                        <Search
+                          size={18}
+                          style={{
+                            position: "absolute",
+                            left: "12px",
+                            top: "14px",
+                            color: "var(--text-secondary)",
+                          }}
+                        />
+                        <input
+                          type="text"
+                          style={{ paddingLeft: "38px" }}
+                          placeholder="Search modifiers by name or value..."
+                          value={modifierSearchTerm}
+                          onChange={(e) => setModifierSearchTerm(e.target.value)}
+                        />
+                      </div>
                     </div>
-                    <h3>No modifiers found</h3>
-                    <p>
-                      Click "Add New Modifier" above to define complex level
-                      strings for your routines.
-                    </p>
                   </div>
-                ) : (
-                  <div className="table-container animate-fade-in">
+                </div>
+
+                {(() => {
+                  const filteredModifiers = modifiers.filter((mod) => 
+                    mod.name.toLowerCase().includes(modifierSearchTerm.toLowerCase()) ||
+                    mod.value.toLowerCase().includes(modifierSearchTerm.toLowerCase())
+                  );
+
+                  if (filteredModifiers.length === 0) {
+                    return (
+                      <div className="empty-state">
+                        <div className="empty-state-icon">
+                          <Activity size={48} />
+                        </div>
+                        <h3>No modifiers found</h3>
+                        <p>
+                          {modifierSearchTerm 
+                            ? "Try adjusting your search term."
+                            : 'Click "Add New Modifier" above to define complex level strings for your routines.'}
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                  <div className="table-container animate-fade-in" style={{ marginTop: '1rem' }}>
                     <table>
                       <thead>
                         <tr>
@@ -1145,7 +1182,7 @@ function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {modifiers.map((mod) => (
+                        {filteredModifiers.map((mod) => (
                           <tr key={mod.id}>
                             <td className="cell-name">{mod.name}</td>
                             <td>
@@ -1176,7 +1213,8 @@ function App() {
                       </tbody>
                     </table>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             )}
 
