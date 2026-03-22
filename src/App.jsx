@@ -877,15 +877,6 @@ function App() {
                   <Plus size={16} /> Create New Routine
                 </button>
               )}
-              {activeTab === "modifiers" && (
-                <button
-                  className="btn btn-primary"
-                  style={{ padding: "0.4rem 1rem", fontSize: "0.9rem" }}
-                  onClick={openNewModifierForm}
-                >
-                  <Plus size={16} /> Add New Modifier
-                </button>
-              )}
             </div>
           )}
 
@@ -1125,7 +1116,7 @@ function App() {
             {activeTab === "modifiers" && (
               <div className="animate-fade-in">
                 <div className="controls-bar">
-                  <div className="filters-group" style={{ justifyContent: 'flex-start' }}>
+                  <div className="filters-group">
                     <div className="form-group" style={{ flex: "2" }}>
                       <div style={{ position: "relative" }}>
                         <Search
@@ -1146,6 +1137,28 @@ function App() {
                         />
                       </div>
                     </div>
+
+                    {/* Placeholder dropdowns for layout consistency like Skill Library */}
+                    <div className="form-group">
+                      <select disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                        <option>All Levels</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <select disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+                        <option>All Categories</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="controls-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={openNewModifierForm}
+                      style={{ margin: 0 }}
+                    >
+                      <Plus size={20} /> Add New Modifier
+                    </button>
                   </div>
                 </div>
 
@@ -1176,15 +1189,23 @@ function App() {
                     <table>
                       <thead>
                         <tr>
-                          <th>Modifier Name</th>
-                          <th>Modified Value (Level Format)</th>
+                          <th style={{ width: '100px' }}>LEVEL</th>
+                          <th>MODIFIER NAME</th>
+                          <th>CATEGORY</th>
+                          <th>Value (Format)</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredModifiers.map((mod) => (
                           <tr key={mod.id}>
+                            <td>
+                              <span className="badge badge-level">-</span>
+                            </td>
                             <td className="cell-name">{mod.name}</td>
+                            <td>
+                              <span className="badge badge-category">-</span>
+                            </td>
                             <td>
                               <span className="badge badge-level">
                                 ({mod.value})
