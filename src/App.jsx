@@ -51,9 +51,9 @@ const DEFAULT_SKILLS = [
 
 const DEFAULT_ROUTINES = [];
 const DEFAULT_MODIFIERS = [
-  { id: "mod-1", name: "Double 1", value: "L1, L1" },
-  { id: "mod-2", name: "Triple 1", value: "L1, L1, L1" },
-  { id: "mod-3", name: "Modified 2", value: "L1, L1, L2" },
+  { id: "mod-1", name: "Double 1", value: "L1, L1", socialLink: "" },
+  { id: "mod-2", name: "Triple 1", value: "L1, L1, L1", socialLink: "" },
+  { id: "mod-3", name: "Modified 2", value: "L1, L1, L2", socialLink: "" },
 ];
 
 function useCloudSyncState(docName, localKey, defaultVal) {
@@ -180,7 +180,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
       if (inputValue.trim()) {
         if (prediction && e.key === "Enter") {
           const finalVal = prediction.type === 'modifier' 
-            ? `${prediction.name} (l ${prediction.value})`
+            ? `${prediction.name} ${prediction.value}`
             : prediction.name;
           addToken(finalVal);
         } else {
@@ -476,6 +476,7 @@ function App() {
     id: "",
     name: "",
     value: "",
+    socialLink: "",
   });
   const [isModifierModalOpen, setIsModifierModalOpen] = useState(false);
   const [modifierSearchTerm, setModifierSearchTerm] = useState("");
@@ -642,6 +643,7 @@ function App() {
       id: "",
       name: "",
       value: "",
+      socialLink: "",
     });
     setIsModifierModalOpen(false);
   };
@@ -806,6 +808,31 @@ function App() {
       const levelA = parseFloat(a.level) || 0;
       const levelB = parseFloat(b.level) || 0;
       if (levelA !== levelB) return levelA - levelB;
+
+      // Custom priority sorting for Multiples category based on description keywords
+      if (a.category === "Multiples" && b.category === "Multiples") {
+        const rotationPriority = {
+          SEPTUPLE: 7,
+          SEXTUPLE: 6,
+          QUINTUPLE: 5,
+          QUADRUPLE: 4,
+          TRIPLE: 3,
+          DOUBLE: 2,
+          SINGLE: 1,
+        };
+        const getPriority = (skill) => {
+          const desc = (skill.description || "").toUpperCase();
+          // Check from highest to lowest to avoid partial matches if any
+          for (const [key, priority] of Object.entries(rotationPriority)) {
+            if (desc.includes(key)) return priority;
+          }
+          return 99;
+        };
+        const pA = getPriority(a);
+        const pB = getPriority(b);
+        if (pA !== pB) return pA - pB;
+      }
+
       const subA = a.subcategory || "";
       const subB = b.subcategory || "";
       const subCompare = subA.localeCompare(subB);
@@ -817,7 +844,7 @@ function App() {
     <>
       {!printRoutineId && (
         <div className="app-container">
-          {activeTab === "library" && (
+          {(activeTab === "library" || activeTab === "modifiers") && (
             <header>
               <div className="logo-container">
                 <div className="logo-icon">
@@ -830,7 +857,9 @@ function App() {
                 style={{ display: "flex", alignItems: "center", gap: "8px" }}
               >
                 <Trophy size={18} color="var(--accent-secondary)" />
-                {skills.length} Skills Logged
+                {activeTab === "library" 
+                  ? `${skills.length} Skills Logged` 
+                  : `${modifiers.length} Modifiers Logged`}
               </div>
             </header>
           )}
@@ -850,15 +879,6 @@ function App() {
                   <BookOpen size={20} /> Skill Library
                 </button>
                 <button
-                  className={`tab-btn ${activeTab === "routines" ? "active" : ""}`}
-                  onClick={() => {
-                    setActiveTab("routines");
-                    setRoutinesHistory([]);
-                  }}
-                >
-                  <Users size={20} /> Student Routines
-                </button>
-                <button
                   className={`tab-btn ${activeTab === "modifiers" ? "active" : ""}`}
                   onClick={() => {
                     setActiveTab("modifiers");
@@ -866,6 +886,15 @@ function App() {
                   }}
                 >
                   <Activity size={20} /> Modifiers Library
+                </button>
+                <button
+                  className={`tab-btn ${activeTab === "routines" ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab("routines");
+                    setRoutinesHistory([]);
+                  }}
+                >
+                  <Users size={20} /> Student Routines
                 </button>
               </div>
               {activeTab === "routines" && (
@@ -979,7 +1008,7 @@ function App() {
                           <tr key={skill.id}>
                             <td>
                               <span className="badge badge-level">
-                                Lvl {skill.level}
+                                L{skill.level}
                               </span>
                             </td>
                             <td className="cell-name">{skill.name}</td>
@@ -1138,12 +1167,7 @@ function App() {
                       </div>
                     </div>
 
-                    {/* Placeholder dropdowns for layout consistency like Skill Library */}
-                    <div className="form-group">
-                      <select disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
-                        <option>All Levels</option>
-                      </select>
-                    </div>
+                    {/* Placeholder dropdown for layout consistency like Skill Library */}
                     <div className="form-group">
                       <select disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>
                         <option>All Categories</option>
@@ -1189,27 +1213,39 @@ function App() {
                     <table>
                       <thead>
                         <tr>
-                          <th style={{ width: '100px' }}>LEVEL</th>
-                          <th>MODIFIER NAME</th>
-                          <th>CATEGORY</th>
-                          <th>Value (Format)</th>
+                          <th>MODIFIER SKILL NAME</th>
+                          <th>MODIFIER LEVEL</th>
+                          <th>MEDIA LINK</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredModifiers.map((mod) => (
                           <tr key={mod.id}>
-                            <td>
-                              <span className="badge badge-level">-</span>
-                            </td>
                             <td className="cell-name">{mod.name}</td>
                             <td>
-                              <span className="badge badge-category">-</span>
+                              <span className="badge badge-level">
+                                {mod.value}
+                              </span>
                             </td>
                             <td>
-                              <span className="badge badge-level">
-                                ({mod.value})
-                              </span>
+                              {mod.socialLink ? (
+                                <button
+                                  className="btn-icon"
+                                  onClick={() => setVideoUrl(mod.socialLink)}
+                                  style={{
+                                    color: "var(--accent-primary)",
+                                    fontSize: "0.8rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                  }}
+                                >
+                                  <PlaySquare size={14} /> View
+                                </button>
+                              ) : (
+                                <span className="text-muted">-</span>
+                              )}
                             </td>
                             <td>
                               <div className="actions-cell">
@@ -1819,8 +1855,19 @@ function App() {
                 required
               />
               <p className="text-muted" style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
-                Format: L1, L1, L2 etc. (This will appear as (L1, L1, L2))
+                Format: L1, L1, L2 etc. (This will appear as L1, L1, L2)
               </p>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '1.5rem' }}>
+              <label>Social Media / Video Link (Optional)</label>
+              <input
+                type="text"
+                name="socialLink"
+                value={modifierFormData.socialLink}
+                onChange={handleModifierInputChange}
+                placeholder="YouTube or other video link..."
+              />
             </div>
 
             <div className="modal-actions" style={{ marginTop: "2rem", display: "flex", justifyContent: "flex-end" }}>
