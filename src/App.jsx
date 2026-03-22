@@ -344,20 +344,20 @@ function App() {
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
-    // YouTube
-    const ytMatch = url.match(
-      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/,
-    );
-    if (ytMatch) {
-      const id = ytMatch[1].split(/[&?]/)[0];
-      return `https://www.youtube.com/embed/${id}?autoplay=1`;
-    }
-    // Instagram (simplified, often needs official API or specific embed URL)
-    if (url.includes("instagram.com")) {
-      return null; // For now, handle as link
+    try {
+      // YouTube
+      const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|^shorts\/|youtube.com\/shorts\/)([^#&?]*).*/;
+
+      const match = url.match(ytRegExp);
+      if (match && match[2].length === 11) {
+        return `https://www.youtube.com/embed/${match[2]}?autoplay=1`;
+      }
+    } catch (e) {
+      console.warn("Embed parsing error:", e);
     }
     return null;
   };
+
 
 
   const resetForm = () => {
