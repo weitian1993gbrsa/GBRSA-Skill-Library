@@ -1405,6 +1405,7 @@ function App() {
                     onClick={() => {
                       setActiveRoutineId(printRoutineId);
                       setPrintRoutineId(null);
+                      setRoutinesHistory([]);
                     }}
                   >
                     <Edit2 size={18} /> Edit

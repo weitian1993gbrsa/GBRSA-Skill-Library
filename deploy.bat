@@ -43,4 +43,5 @@ echo.
 echo =======================================
 echo    SUCCESSFULLY DEPLOYED!
 echo =======================================
-pause
+timeout /t 5
+exit /b 0
