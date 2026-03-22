@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   PlaySquare,
   Plus,
@@ -341,6 +341,24 @@ function App() {
   });
 
   const [videoUrl, setVideoUrl] = useState(null);
+  
+  // Ref for auto-scrolling
+  const addRowBtnRef = useRef(null);
+  const activeRoutine = routines.find(r => r.id === activeRoutineId);
+  const rowCount = activeRoutine?.rows.length || 0;
+  const lastRowCount = useRef(rowCount);
+  const lastActiveRoutineId = useRef(activeRoutineId);
+
+  useEffect(() => {
+    // Only auto-scroll if we are in the same routine and the row count increased (a row was added)
+    if (activeRoutineId && activeRoutineId === lastActiveRoutineId.current && rowCount > lastRowCount.current) {
+      setTimeout(() => {
+        addRowBtnRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
+    }
+    lastRowCount.current = rowCount;
+    lastActiveRoutineId.current = activeRoutineId;
+  }, [rowCount, activeRoutineId]);
 
   const getEmbedUrl = (url) => {
     if (!url) return null;
@@ -948,6 +966,7 @@ function App() {
                 </table>
 
                 <button
+                  ref={addRowBtnRef}
                   className="btn"
                   style={{
                     marginTop: "1rem",
