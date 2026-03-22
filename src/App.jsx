@@ -334,7 +334,9 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library }) => {
             >
               <X size={12} />
             </button>
-            <span className="skill-token-comma">, </span>
+            {(idx < rawSkills.length - 1 || inputValue.trim() !== "") && (
+              <span className="skill-token-comma">, </span>
+            )}
           </div>
         );
       })}
