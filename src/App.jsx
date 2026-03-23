@@ -459,6 +459,7 @@ function App() {
   // Skill Form State
   const [filterLevel, setFilterLevel] = useState("All");
   const [filterCategory, setFilterCategory] = useState("All");
+  const [filterSubcategory, setFilterSubcategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -483,6 +484,7 @@ function App() {
   const [isModifierModalOpen, setIsModifierModalOpen] = useState(false);
   const [modifierSearchTerm, setModifierSearchTerm] = useState("");
   const [modifierFilterCategory, setModifierFilterCategory] = useState("All");
+  const [modifierFilterSubcategory, setModifierFilterSubcategory] = useState("All");
 
   const [videoUrl, setVideoUrl] = useState(null);
 
@@ -570,7 +572,8 @@ function App() {
     const levelVal = filterLevel !== "All" ? filterLevel : "1";
     const categoryVal =
       filterCategory !== "All" ? filterCategory : "Rope Manipulation";
-    const subcategoryVal = CATEGORIES[categoryVal][0] || "";
+    const subcategoryVal = 
+      filterSubcategory !== "All" ? filterSubcategory : (CATEGORIES[categoryVal][0] || "");
     setFormData((prev) => ({
       ...prev,
       level: levelVal,
@@ -822,10 +825,12 @@ function App() {
       const matchesLevel = filterLevel === "All" || skill.level === filterLevel;
       const matchesCategory =
         filterCategory === "All" || skill.category === filterCategory;
+      const matchesSubcategory =
+        filterSubcategory === "All" || skill.subcategory === filterSubcategory;
       const matchesSearch =
         skill.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         skill.description.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesLevel && matchesCategory && matchesSearch;
+      return matchesLevel && matchesCategory && matchesSubcategory && matchesSearch;
     })
     .sort((a, b) => {
       const levelA = parseFloat(a.level) || 0;
@@ -978,7 +983,10 @@ function App() {
                     <div className="form-group">
                       <select
                         value={filterCategory}
-                        onChange={(e) => setFilterCategory(e.target.value)}
+                        onChange={(e) => {
+                          setFilterCategory(e.target.value);
+                          setFilterSubcategory("All");
+                        }}
                       >
                         <option value="All">All Categories</option>
                         {Object.keys(CATEGORIES).map((cat) => (
@@ -986,6 +994,21 @@ function App() {
                             {cat}
                           </option>
                         ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <select
+                        value={filterSubcategory}
+                        onChange={(e) => setFilterSubcategory(e.target.value)}
+                      >
+                        <option value="All">All Subcategories</option>
+                        {filterCategory !== "All" &&
+                          CATEGORIES[filterCategory]?.map((sub) => (
+                            <option key={sub} value={sub}>
+                              {sub}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
@@ -1193,7 +1216,10 @@ function App() {
                     <div className="form-group">
                       <select
                         value={modifierFilterCategory}
-                        onChange={(e) => setModifierFilterCategory(e.target.value)}
+                        onChange={(e) => {
+                          setModifierFilterCategory(e.target.value);
+                          setModifierFilterSubcategory("All");
+                        }}
                       >
                         <option value="All">All Categories</option>
                         {Object.keys(CATEGORIES).map((cat) => (
@@ -1201,6 +1227,21 @@ function App() {
                             {cat}
                           </option>
                         ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <select
+                        value={modifierFilterSubcategory}
+                        onChange={(e) => setModifierFilterSubcategory(e.target.value)}
+                      >
+                        <option value="All">All Subcategories</option>
+                        {modifierFilterCategory !== "All" &&
+                          CATEGORIES[modifierFilterCategory]?.map((sub) => (
+                            <option key={sub} value={sub}>
+                              {sub}
+                            </option>
+                          ))}
                       </select>
                     </div>
                   </div>
@@ -1221,10 +1262,13 @@ function App() {
                     const matchesCategory =
                       modifierFilterCategory === "All" ||
                       (mod.categories && mod.categories.includes(modifierFilterCategory));
+                    const matchesSubcategory =
+                      modifierFilterSubcategory === "All" ||
+                      (mod.subcategories && mod.subcategories.includes(modifierFilterSubcategory));
                     const matchesSearch =
                       mod.name.toLowerCase().includes(modifierSearchTerm.toLowerCase()) ||
                       mod.value.toLowerCase().includes(modifierSearchTerm.toLowerCase());
-                    return matchesCategory && matchesSearch;
+                    return matchesCategory && matchesSubcategory && matchesSearch;
                   });
 
                   if (filteredModifiers.length === 0) {
