@@ -114,24 +114,12 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
   const [editingIdx, setEditingIdx] = useState(null);
   const [editValue, setEditValue] = useState("");
 
-  const searchStr = inputValue.toLowerCase().trim();
-  const allChoices = [
-    ...library.map(s => ({ ...s, displayName: s.name, type: 'skill' })),
-    ...modifiers.map(m => ({ ...m, displayName: m.name, type: 'modifier' }))
-  ];
-
-  const prediction =
-    searchStr.length > 0
-      ? allChoices.find(
-          (c) =>
-            c.displayName.toLowerCase().startsWith(searchStr) &&
-            c.displayName.toLowerCase() !== searchStr,
-        )
-      : null;
-
-  const predictionRemainder = prediction
-    ? prediction.displayName.substring(inputValue.length)
-    : "";
+  const normalize = (str) => {
+    if (!str) return "";
+    // Remove (L...) levels if present to match base skill name
+    const base = str.replace(/\(l\s*[\d.,\sL-]+\)$/i, "").trim();
+    return base.toLowerCase().replace(/[^a-z0-9]/g, "");
+  };
 
   const parseTokens = (str) => {
     const result = [];
@@ -152,22 +140,31 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
     return result;
   };
 
+  const getCorrectedToken = (val) => {
+    const normVal = normalize(val);
+    if (!normVal) return val;
+
+    // Check library skills first
+    const skillMatch = library.find(s => normalize(s.name) === normVal);
+    if (skillMatch) return skillMatch.name;
+
+    // Check modifiers
+    const modMatch = modifiers.find(m => normalize(m.name) === normVal);
+    if (modMatch) return `${modMatch.name} ${modMatch.value}`;
+
+    return val;
+  };
+
   const addToken = (val) => {
     const parts = parseTokens(val);
     if (parts.length > 0) {
-      onChange(rowId, [...rawSkills, ...parts]);
+      const correctedParts = parts.map(p => getCorrectedToken(p));
+      onChange(rowId, [...rawSkills, ...correctedParts]);
       setInputValue("");
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Tab" || e.key === "ArrowRight") {
-      if (prediction) {
-        e.preventDefault();
-        setInputValue(prediction.displayName);
-        return;
-      }
-    }
     if (e.key === "," || e.key === "Enter") {
       // Bracket-aware comma check: only tokenize if all brackets are closed
       if (e.key === ",") {
@@ -178,14 +175,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
 
       e.preventDefault();
       if (inputValue.trim()) {
-        if (prediction && e.key === "Enter") {
-          const finalVal = prediction.type === 'modifier' 
-            ? `${prediction.name} ${prediction.value}`
-            : prediction.name;
-          addToken(finalVal);
-        } else {
-          addToken(inputValue);
-        }
+        addToken(inputValue);
       }
     } else if (e.key === "Backspace" && inputValue === "") {
       e.preventDefault();
@@ -223,7 +213,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
     const newArr = [...rawSkills];
     const trimmed = editValue.trim();
     if (trimmed) {
-      newArr[idx] = trimmed;
+      newArr[idx] = getCorrectedToken(trimmed);
     } else {
       newArr.splice(idx, 1);
     }
@@ -287,12 +277,16 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
           displayLevel = `(L${manualMatch[1]})`;
         }
 
-        // Always check library first for official level, using the base skill name
+        // Always check library first for official level, using normalized name matching
+        const normName = normalize(displayName);
         const found = library.find(
-          (s) => s.name.toLowerCase() === displayName.toLowerCase(),
+          (s) => normalize(s.name) === normName,
         );
         if (found) {
           displayLevel = `(L${found.level})`;
+          // Also check if the token itself needs correction (though addToken handles this, 
+          // direct edits or legacy data might still be uncorrected)
+          displayName = found.name;
         }
 
         return (
@@ -348,7 +342,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
             >
               <X size={12} />
             </button>
-            {(idx < rawSkills.length - 1 || inputValue.trim() !== "") && (
+            {idx < rawSkills.length - 1 && (
               <span className="skill-token-comma">, </span>
             )}
           </div>
@@ -378,33 +372,11 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
           }
           autoComplete="off"
         />
-        {prediction && inputValue.length > 0 && (
-          <div
-            style={{
-              position: "absolute",
-              left: 0,
-              top: 0,
-              bottom: 0,
-              display: "flex",
-              alignItems: "center",
-              color: "#cbd5e1",
-              pointerEvents: "none",
-              zIndex: 0,
-              whiteSpace: "pre",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-              paddingLeft: 0,
-              fontFamily: "inherit",
-            }}
-          >
-            <span style={{ visibility: "hidden" }}>{inputValue}</span>
-            <span>{predictionRemainder}</span>
-          </div>
-        )}
       </div>
     </div>
   );
 };
+
 
 function App() {
   const [activeTab, setActiveTab] = useState("library");
