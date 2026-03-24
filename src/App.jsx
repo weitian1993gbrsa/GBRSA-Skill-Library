@@ -653,8 +653,14 @@ function App() {
 
   const openNewModifierForm = () => {
     resetModifierForm();
+    setModifierFormData((prev) => ({
+      ...prev,
+      categories: modifierFilterCategory !== "All" ? [modifierFilterCategory] : [],
+      subcategories: modifierFilterSubcategory !== "All" ? [modifierFilterSubcategory] : [],
+    }));
     setIsModifierModalOpen(true);
   };
+
 
   const handleModifierInputChange = (e) => {
     let { name, value } = e.target;
