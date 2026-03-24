@@ -1051,8 +1051,8 @@ function App() {
                           <th>Skill Name</th>
                           <th>Category</th>
                           <th>Subcategory</th>
-                          <th>Description</th>
                           <th>Media Link</th>
+                          <th>Description</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
@@ -1079,11 +1079,6 @@ function App() {
                                 <span className="text-muted">-</span>
                               )}
                             </td>
-                            <td className="cell-desc" title={skill.description}>
-                              {skill.description || (
-                                <span className="text-muted italic">None</span>
-                              )}
-                            </td>
                             <td>
                               {skill.socialLink ? (
                                 <button
@@ -1104,6 +1099,11 @@ function App() {
                                 </button>
                               ) : (
                                 <span className="text-muted">-</span>
+                              )}
+                            </td>
+                            <td className="cell-desc" title={skill.description}>
+                              {skill.description || (
+                                <span className="text-muted italic">None</span>
                               )}
                             </td>
 
@@ -1630,6 +1630,16 @@ function App() {
                 )}
 
                 <div className="form-group">
+                  <label>Social Media / Video Link</label>
+                  <input
+                    type="url"
+                    name="socialLink"
+                    value={formData.socialLink || ""}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="form-group">
                   <label>Description (Optional)</label>
                   <textarea
                     name="description"
@@ -1647,16 +1657,6 @@ function App() {
                       e.target.style.height = e.target.scrollHeight + "px";
                     }}
                     placeholder="Briefly describe the skill (will expand as you type)..."
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Social Media / Video Link</label>
-                  <input
-                    type="url"
-                    name="socialLink"
-                    value={formData.socialLink || ""}
-                    onChange={handleInputChange}
                   />
                 </div>
 
