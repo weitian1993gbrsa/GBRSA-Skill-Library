@@ -116,9 +116,20 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
 
   const normalize = (str) => {
     if (!str) return "";
-    // Remove (L...) levels if present to match base skill name
-    const base = str.replace(/\(l\s*[\d.,\sL-]+\)$/i, "").trim();
-    return base.toLowerCase().replace(/[^a-z0-9]/g, "");
+    // Preserve dots, dashes, and spaces to distinguish skills like S-O-O vs S.O.O
+    return str.toLowerCase().replace(/[^a-z0-9\s.-]/g, "").trim();
+  };
+
+  const extractLevel = (str) => {
+    // Matches patterns like "(L0.5)", "(l 1)", "(L 2, L 3)" at the end of the string
+    const match = str.match(/\(l\s*([\d.,\sL-]+)\)$/i);
+    if (match) {
+      const name = str.substring(0, str.length - match[0].length).trim();
+      // Clean up: uppercase, remove leading L if exists, trim
+      const level = match[1].toUpperCase().replace(/^L\s*/, "").trim();
+      return { name, level };
+    }
+    return { name: str.trim(), level: null };
   };
 
   const parseTokens = (str) => {
@@ -141,15 +152,28 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
   };
 
   const getCorrectedToken = (val) => {
-    const normVal = normalize(val);
-    if (!normVal) return val;
+    const { name: typedName, level: typedLevel } = extractLevel(val);
+    const normTypedName = normalize(typedName);
+    if (!normTypedName) return val;
 
-    // Check library skills first
-    const skillMatch = library.find(s => normalize(s.name) === normVal);
-    if (skillMatch) return skillMatch.name;
+    // Find all matches in library with the same normalized name
+    const matches = library.filter(s => normalize(s.name) === normTypedName);
+    
+    if (matches.length > 0) {
+      if (typedLevel) {
+        // Strict match: must match the typed level exactly
+        const exactMatch = matches.find(s => s.level.toString().toUpperCase() === typedLevel);
+        if (exactMatch) return exactMatch.name;
+        // If level specified but no match, return as-is
+        return val;
+      } else if (matches.length === 1) {
+        // No level typed: correct if there is exactly one match
+        return matches[0].name;
+      }
+    }
 
     // Check modifiers
-    const modMatch = modifiers.find(m => normalize(m.name) === normVal);
+    const modMatch = modifiers.find(m => normalize(m.name) === normTypedName);
     if (modMatch) return `${modMatch.name} ${modMatch.value}`;
 
     return val;
@@ -265,28 +289,26 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
           );
         }
 
-        let displayName = token;
-        let displayLevel = null;
+        const { name: baseName, level: manualLevel } = extractLevel(token);
+        let displayName = baseName;
+        let displayLevel = manualLevel ? `(L${manualLevel})` : null;
 
-        // Check if the user manually appended a level like (L0.5), (l1), or (L0.5, L0.5)
-        const manualMatch = token.match(/\(l\s*([\d.,\sL-]+)\)$/i);
-        if (manualMatch) {
-          displayName = token
-            .substring(0, token.length - manualMatch[0].length)
-            .trim();
-          displayLevel = `(L${manualMatch[1]})`;
-        }
-
-        // Always check library first for official level, using normalized name matching
-        const normName = normalize(displayName);
-        const found = library.find(
-          (s) => normalize(s.name) === normName,
-        );
-        if (found) {
-          displayLevel = `(L${found.level})`;
-          // Also check if the token itself needs correction (though addToken handles this, 
-          // direct edits or legacy data might still be uncorrected)
-          displayName = found.name;
+        // Check library for official level and name correction using strict logic
+        const normName = normalize(baseName);
+        const matches = library.filter(s => normalize(s.name) === normName);
+        
+        if (matches.length > 0) {
+          let found = null;
+          if (manualLevel) {
+            found = matches.find(s => s.level.toString().toUpperCase() === manualLevel);
+          } else if (matches.length === 1) {
+            found = matches[0];
+          }
+          
+          if (found) {
+            displayLevel = `(L${found.level})`;
+            displayName = found.name;
+          }
         }
 
         return (
@@ -376,6 +398,7 @@ const SkillRowInput = ({ rowId, rawSkills = [], onChange, library, modifiers = [
     </div>
   );
 };
+
 
 
 function App() {
@@ -634,9 +657,15 @@ function App() {
   };
 
   const handleModifierInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (name === "value") {
+      // Auto-format: L2L4 -> L2, L4
+      // This regex looks for L followed by digits/decimals, and if another L follows (ignoring spaces), it inserts a comma.
+      value = value.replace(/L\s*([\d.]+)\s*(?=L)/gi, "L$1, ");
+    }
     setModifierFormData((prev) => ({ ...prev, [name]: value }));
   };
+
 
   const toggleModifierCategory = (cat) => {
     setModifierFormData((prev) => ({
